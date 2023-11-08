@@ -1,49 +1,17 @@
-library(knitr)
-library(dplyr)
-library(ggforce)
-library(GeoMxWorkflows)
+library(readxl)
 library(NanoStringNCTools)
 library(GeomxTools)
-library(readxl)
-library(enrichplot)
-library(data.table)
-library(fgsea)
-library(ggplot2)
-library(ggrepel) 
-library(org.Hs.eg.db)
-library(org.Mm.eg.db)
-library(AnnotationHub)
-library(GOSemSim)
-library(clusterProfiler)
-library(GOSemSim)
-library(ggwordcloud)
-library(ggplot2)
-library(cowplot)
-library(ReactomePA)
-library(DOSE)
-library(msigdbr)
 library(knitr)
-library(dplyr)
-library(ggforce)
-library(GeoMxWorkflows)
-library(NanoStringNCTools)
-library(GeomxTools)
-library(readxl)
-library(topGO)
-library(scales) # for percent
-library(reshape2)
-library(cowplot) 
-library(umap)
-library(Rtsne)
 
-# knitr::opts_chunk$set(echo = TRUE)
-output_prefix<-"CPTR474"
-projectname<-"CPTR474"
-datadir<-"F:/GeoMX KPC/WTA_11232022/raw_data"
-DCCdir<-"DCC-11232022"
+output_prefix<-"Cheng_WTA1"
+projectname<-"Cheng_WTA1"
+
+datadir<-"F:/GeoMX KPC/Cheng_WTA1/raw_data"
+DCCdir<-"DCC-20230817"
 PKCfilename<-"Mm_R_NGS_WTA_v1.0.pkc"
-WorkSheet<-"final_2.xlsx"
-final <- read_excel("F:/GeoMX KPC/WTA_11232022/raw_data/final_2.xlsx")
+WorkSheet<-"final2.xlsx"
+final <- read_excel("F:/GeoMX KPC/Cheng_WTA1/raw_data/final2.xlsx")
+output_dir<-"processed_data/"
 
 DCCFiles <- list.files(file.path(datadir , DCCdir), pattern=".dcc$", full.names=TRUE)
 PKCFiles <- file.path(datadir, PKCfilename)
@@ -59,28 +27,35 @@ myData<-readNanoStringGeoMxSet(dccFiles = DCCFiles,
 
 #Shift counts to one to mimic how DSPDA handles zero counts
 myData <- shiftCountsOne(myData, elt="exprs", useDALogic=TRUE) 
-
 pkcs <- annotation(myData)
 modules <- gsub(".pkc", "", pkcs)
-kable(data.frame(PKCs = pkcs, modules = modules))
 
+########
+####  Segment QC
+# 
+# 
+# Before excluding any low-performing ROI/AOI segments, we visualize the distributions of the data for the different QC parameters.  The cutoffs used are:
+#   
+#   * **Raw sequencing reads**: segments with <1000 raw reads are removed.
+# * **% Aligned,% Trimmed, or % Stitched sequencing reads**: segments below ~80% for one or more of these QC parameters are removed.
+# * **% Sequencing saturation ([1-deduplicated reads/aligned reads]%)**: segments below ~50% require additional sequencing to capture full sample diversity and are not typically analyzed until improved.
+# * **Negative Count**: this is the geometric mean of the several unique negative probes in the GeoMx panel that do not target mRNA and establish the background count level per segment; segments with low negative counts (1-10) are not necessarily removed but may be studied closer for low endogenous gene signal and/or insufficient tissue sampling.
+# * **No Template Control (NTC) count**: values >1,000 could indicate contamination for the segments associated with this NTC; however, in cases where the NTC count is between 1,000- 10,000, the segments may be used if the NTC data is uniformly low (e.g. 0-2 counts for all probes).
+# * **Nuclei**: >100 nuclei per segment is generally recommended; however, this cutoff is highly study/tissue dependent and may need to be reduced; what is most important is consistency in the nuclei distribution for segments within the study.  We use 20 in this case.
+# * **Area**: generally correlates with nuclei; a strict cutoff is not generally applied based on area.
+# 
+# _***Note***:  You may need to change these cutoffs depending on your experimental setup._
+######## 
 
-
-
-
-## ----setqcflagupdated,  eval = TRUE-------------------------------------------
-# Default QC cutoffs are commented in () adjacent to the respective parameters
-# study-specific values were selected after visualizing the QC results in more
-# detail below
 QC_params <-
   list(minSegmentReads = 1000, # Minimum number of reads (1000)
        percentTrimmed = 80,    # Minimum % of reads trimmed (80%)
        percentStitched = 80,   # Minimum % of reads stitched (80%)
-       percentAligned = 80,    # Minimum % of reads aligned (80%)
+       percentAligned = 80,    # Minimum % of reads aligned to known targets (80%)
        percentSaturation = 50, # Minimum sequencing saturation (50%)
-       minNegativeCount = 4,   # Minimum negative control counts (10)
-       maxNTCCount = 9000,     # Maximum counts observed in NTC well (1000)
-       minNuclei = 20,         # Minimum # of nuclei estimated (100)
+       minNegativeCount = 1,   # Minimum negative control counts (10)
+       maxNTCCount = 1000,     # Maximum counts observed in NTC well (1000)
+       minNuclei = 20,         # Minimum # of cells observed in a segment (100)
        minArea = 1000)         # Minimum segment area (5000)
 myData <-
   setSegmentQCFlags(myData, qcCutoffs = QC_params)        
@@ -93,13 +68,18 @@ QC_Summary <- data.frame(Pass = colSums(!QCResults[, flag_columns]),
 QCResults$QCStatus <- apply(QCResults, 1L, function(x) {
   ifelse(sum(x) == 0L, "PASS", "WARNING")
 })
-QC_Summary["TOTAL FLAGS", ] <-  c(sum(QCResults[, "QCStatus"] == "PASS"), sum(QCResults[, "QCStatus"] == "WARNING"))
+QC_Summary["TOTAL FLAGS", ] <-
+  c(sum(QCResults[, "QCStatus"] == "PASS"),
+    sum(QCResults[, "QCStatus"] == "WARNING"))
 
 
-## ----qcflagHistogramsCode, eval = TRUE, warning = FALSE, message = FALSE------
 
 
-col_by <- "class"
+
+
+
+
+col_by <- "region"
 
 # Graphical summaries of QC statistics plot function
 QC_histogram <- function(assay_data = NULL,
@@ -131,7 +111,7 @@ QC_histogram(sData(myData), "Saturated (%)", col_by, 50) +
   labs(title = "Sequencing Saturation (%)",
        x = "Sequencing Saturation (%)")
 QC_histogram(sData(myData), "area", col_by, 10, scale_trans = "log10")
-QC_histogram(sData(myData), "nuclei", col_by, 10)
+QC_histogram(sData(myData), "Nuclei count", col_by, 10)
 
 #QC_histogram(sData(myData), "Aligned", col_by, 10000)
 # calculate the negative geometric means for each module
@@ -261,7 +241,7 @@ pData(target_myData)$DetectionThreshold <-
 # stacked bar plot of different cut points (1%, 5%, 10%, 15%)
 ggplot(pData(target_myData),
        aes(x = DetectionThreshold)) +
-  geom_bar(aes(fill = dx)) +
+  geom_bar(aes(fill = genotype)) +
   geom_text(stat = "count", aes(label = ..count..), vjust = -0.5) +
   theme_bw() +
   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
@@ -269,13 +249,18 @@ ggplot(pData(target_myData),
        y = "Segments, #",
        fill = "Segment Type")
 
-####
-####
-####
-## ----segTable-----------------------------------------------------------------
+
+library(DT)
+tmp_data<-pData(target_myData)
+tmp_data<-tmp_data[,c("class","region","GenesDetected","GeneDetectionRate")]
+datatable(tmp_data,
+          'Table showing the genes detected for each ROI',
+          options=list(pageLength = 10)
+) %>%  formatRound(c(4), 2)
+
 # cut percent genes detected at 1, 5, 10, 15
 kable(table(pData(target_myData)$DetectionThreshold,
-            pData(target_myData)$dx))
+            pData(target_myData)$class))
 
 ## ----filterSegments-----------------------------------------------------------
 target_myData <-
@@ -284,45 +269,7 @@ pData(target_myData)[,24:27]
 
 dim(target_myData)
 
-target_myData@phenoData@data$dx
-
-## ----replotSankey, fig.width = 10, fig.height = 8, fig.wide = TRUE, message = FALSE, warning = FALSE----
-# select the annotations we want to show, use `` to surround column names with
-# spaces or special symbols
-
-# count_mat <- count(pData(myData), `Position`, Class, Origin, Sex, Age, Strain, Call, dx)
-# # simplify the slide names
-# count_mat$`core` <- gsub("disease", "d",
-#                          gsub("normal", "n", count_mat$`Position`))
-# # gather the data and plot in order: class, slide name, region, segment
-# test_gr <- gather_set_data(count_mat, 1:7)
-# test_gr$x <- factor(test_gr$x,
-#                     levels = c("Strain","Sex", "Age", "Position", "Class","Origin", "Call"))
-# # plot Sankey
-# sampleoverview2 <- ggplot(test_gr, aes(x, id = id, split = y, value = n)) +
-#   geom_parallel_sets(aes(fill = dx), alpha = 0.5, axis.width = 0.1) +
-#   geom_parallel_sets_axes(axis.width = 0.2) +
-#   geom_parallel_sets_labels(color = "white", size = 4) +
-#   theme_classic(base_size = 17) + 
-#   theme(legend.position = "bottom",
-#         axis.ticks.y = element_blank(),
-#         axis.line = element_blank(),
-#         axis.text.y = element_blank()) +
-#   scale_y_continuous(expand = expansion(0)) + 
-#   scale_x_discrete(expand = expansion(0)) +
-#   labs(x = "", y = "") +
-#   annotate(geom = "segment", x = 7.25, xend = 7.25,
-#            y = 0, yend = 20, lwd = 2) +
-#   annotate(geom = "text", x = 7.19, y = 7.8, angle = 90, size = 4,
-#            hjust = 0.5, label = "20 segments")
-# 
-# 
-# sampleoverview2
-
-# setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-# tiff("sampleoverview2.tiff", units="in", width=19, height=15, res=150)
-# sampleoverview2
-# dev.off()
+target_myData@phenoData@data$genotype
 
 
 
@@ -332,6 +279,8 @@ target_myData@phenoData@data$dx
 
 
 
+library(dplyr)
+library(ggforce)
 
 
 
@@ -356,25 +305,7 @@ goi <- c("Kras", "Trp53", "Cd274", "Cd8a", "Cd68", "Epcam","Cre",
          "Fap","Hnf1b","Krt19","Ctrb1", "Hes1", "Smad4",
          "Onecut1","Onecut2","Onecut3","Cdkn1a","Prss2","Runx1","Gata6",
          "Gata6", "S100a11", "Nr5a2","Agr2", "Foxa2", "Fosl1","Ets2", "Runx3")
-goi <- c("Rock2","Cybrd1","Nr1d1","Bsg","Tmprss4","Tm9sf3","Mmp23","Rhof","Sftpd", "Aqp5","Ccna1",
-              "Muc3","Muc5ac","Muc3a","Kif12","Calml4","Dbp", "Mrtfb", "Rplp0","Dnajc10","Rps12",
-              "Pdzd8", "Mtch2", "Msln", "Prom1", "Vars2","Porcn","Rpl6","Ybx1","Wfdc2","Tpi1",
-              "Golim4","Otop3","F3", "Id2","Adamtsl5","Bag1","Rnf186","Glis2","Slc35f5","Tspan12",
-              "Slc9a4", "Ephb2", "Tmem45b","Tmprss2","Pdxdc1","Lgals2", "Esrp1", "Tmem54", "Ptprf", "Ccnd2",
-              "Ern2","Sult1c2", "Gltp","Spock3","Sgms2","Rasgrf1","St8sia3",
-              "Rap1gap","Rbms3","Ccdc92","Ncald","Ppp1r1b","Gabbr2",
-              "Nt5c2","Cdkn2a","Atrnl1","Camk2n1",
-              "Setbp1","Dennd4c","Hs3st1","Shf","Nfib", "Tuba1b", "Net1", "Ncald","Spock3",
-              "Sem1", "Ctnnd1","Adgre5", "Dennd4c",
-              "Smad4", "Flna", "Cntn1", "Cntn6","Sgms2","Nrxn1","Nrxn2","Nrxn3","Lamb2","Rasgrf1",
-              "Sema3d", "Sema4b","Sema4g","Sema5a","St8sia3",
-              "Lama5", "Rtn4", "Picalm","Efnb2", "Rbms3", "Rock2","Ephb2","Efnb2", "Adam10", "Mmp2", "Mmp9", 
-              "Rac1", "St8sia3", "Camk2n1", "Cdc42", "Spock3", "Rasgrf1",
-              "Lama5", "Itgb1", "Ezr","S100a6", "Gsto1", "Gkn1","Ezr",
-              "Lypd8l", "Anxa2", "Cdh1", "Myrf", "Flna", "Slc12a2", "Actn1", "Fn1", "Hnf1b",
-              "Vasp","Vdac2", "Syncrip", "Rpl5", "Pard3","Dync1i2", "Calm1", "Calm2", "Calm3", "Itgb1","Kras","Trp53","Net1","Nt5c2",
-              "Clu","S100a6", "Anxa2", "Myrf", "Sema4b","Sema4g","Efnb2", "Flna", "Slc12a2", "Actn1", "Actb","Tuba1b",
-              "Vasp", "Syncrip", "Pard3","Rac1", "Rhoa", "Cdc42", "Dync1i2", "Calm1", "Calm2", "Calm3","Lama5", "Itgb1")
+
 
 goi_df <- data.frame(
   Gene = goi,
@@ -482,20 +413,20 @@ target_myData <- normalize(target_myData , data_type = "RNA",
 
 ## ----normplot, fig.small = TRUE-----------------------------------------------
 #visualize the first 10 segments with each normalization method
-boxplot(exprs(target_myData)[,1:79],
-        col = "#9EDAE5", main = "Raw Counts",
-        log = "y", names = 1:77, xlab = "Segment",
-        ylab = "Counts, Raw")
-
-boxplot(assayDataElement(target_myData[,1:79], elt = "q_norm"),
-        col = "#2CA02C", main = "Q3 Norm Counts",
-        log = "y", names = 1:79, xlab = "Segment",
-        ylab = "Counts, Q3 Normalized")
-
-boxplot(assayDataElement(target_myData[,1:79], elt = "neg_norm"),
-        col = "#FF7F0E", main = "Neg Norm Counts",
-        log = "y", names = 1:79, xlab = "Segment",
-        ylab = "Counts, Neg. Normalized")
+# boxplot(exprs(target_myData)[,1:79],
+#         col = "#9EDAE5", main = "Raw Counts",
+#         log = "y", names = 1:79, xlab = "Segment",
+#         ylab = "Counts, Raw")
+# 
+# boxplot(assayDataElement(target_myData[,1:79], elt = "q_norm"),
+#         col = "#2CA02C", main = "Q3 Norm Counts",
+#         log = "y", names = 1:79, xlab = "Segment",
+#         ylab = "Counts, Q3 Normalized")
+# 
+# boxplot(assayDataElement(target_myData[,1:79], elt = "neg_norm"),
+#         col = "#FF7F0E", main = "Neg Norm Counts",
+#         log = "y", names = 1:79, xlab = "Segment",
+#         ylab = "Counts, Neg. Normalized")
 
 ## ----dimReduction, eval = TRUE------------------------------------------------
 library(umap)
@@ -513,13 +444,13 @@ umap_out <-
 pData(target_myData)[, c("UMAP1", "UMAP2")] <- umap_out$layout[, c(1,2)]
 
 umapplot <-ggplot(pData(target_myData),
-                  aes(x = UMAP1, y = UMAP2, shape = Strain, label=sample_ee, color = class)) +
+                  aes(x = UMAP1, y = UMAP2, label=animal, shape = genotype, color = region_geno)) +
   geom_point(size = 3) + geom_text(hjust=1.1, vjust=0.2)+
   theme_bw() #+
   #theme(text = element_text(size = 10)) +
   #theme(legend.position="none")
 umapplot
-ggsave(umapplot, file="C:/Users/edmondsonef/Desktop/umapKPC2.png", width = 18, height = 10, units = "in", bg = "white")
+ggsave(umapplot, file="C:/Users/edmondsonef/Desktop/umap.png", width = 18, height = 10, units = "in", bg = "white")
 
 
 # run tSNE
@@ -529,11 +460,13 @@ tsne_out <-
         perplexity = ncol(target_myData)*.15)
 pData(target_myData)[, c("tSNE1", "tSNE2")] <- tsne_out$Y[, c(1,2)]
 tsneplot <- ggplot(pData(target_myData),
-       aes(x = tSNE1, y = tSNE2, color = class, label=sample_ee, size = 5)) +
+       aes(x = tSNE1, y = tSNE2, color = region_geno, shape = genotype, label=`Nuclei count`, size = 5)) +
   geom_point(size = 3) +geom_text(hjust=1.1, vjust=0.2)+
-  theme_bw()+
-  theme(legend.position="none")
-ggsave(tsneplot, file="C:/Users/edmondsonef/Desktop/tsneKPC2.png", width = 18, height = 10, units = "in", bg = "white")
+  theme_bw()
+  #theme(legend.position="none")
+tsneplot
+
+ggsave(tsneplot, file="C:/Users/edmondsonef/Desktop/tsne.png", width = 18, height = 10, units = "in", bg = "white")
 
 
 ## run PCA
@@ -549,13 +482,13 @@ percentVar=round(100*summary(pca.object)$importance[2, PCAxy],0)
 
 
 pcaplot <- ggplot(pData(target_myData),
-       aes(x = PC1, y = PC2, color=class, label=dx)) +
+       aes(x = PC1, y = PC2, color=genotype, shape = region_geno, label=`Nuclei count`)) +
   geom_point(size = 3) + geom_text(hjust=1.1, vjust=0.2)+
   xlab(paste0("PC", PCAx ,": ", percentVar[1], "% variance")) +
   ylab(paste0("PC", PCAy ,": ", percentVar[2], "% variance")) +
-  
-  theme_bw()+
-  theme(legend.position="none")
+  theme_bw()
+  #theme(legend.position="none")
+pcaplot
 
 ggsave(pcaplot, file="C:/Users/edmondsonef/Desktop/pcaKPC2.png", width = 18, height = 10, units = "in", bg = "white")
 
@@ -576,27 +509,75 @@ CV_dat <- assayDataApply(target_myData,
 sort(CV_dat, decreasing = TRUE)[1:50]
 
 # Identify genes in the top 3rd of the CV values
-GOI <- names(CV_dat)[CV_dat > quantile(CV_dat, 0.99)]
+GOI <- names(CV_dat)[CV_dat > quantile(CV_dat, 0.9)]
+
+
 pheatmap(assayDataElement(target_myData[GOI, ], elt = "log_q"),
          scale = "row", 
-         show_rownames = FALSE, show_colnames = FALSE,
+         main="Heatmap of high CV (>0.9) genes",
+         show_rownames = F, show_colnames = FALSE,
          border_color = NA,
-         clustering_method = "complete",
-         clustering_distance_rows = "euclidean",
-         clustering_distance_cols = "euclidean",
+         clustering_method = "average",
+         clustering_distance_rows = "correlation",
+         clustering_distance_cols = "correlation",
          breaks = seq(-3, 3, 0.05),
          color = colorRampPalette(c("purple3", "black", "yellow2"))(120),
-         annotation_col =  pData(target_myData)[, c("class","Strain", "region")],
-         cutree_rows = 5,
-         cutree_cols = 6)
+         annotation_col = pData(target_myData)[, c("region", "genotype")],
+         cutree_rows = 4,
+         cutree_cols = 4)
 
 
-
-save(final, target_myData, neg_probes, file = "F:/GeoMX KPC/WTA_11232022/processed_data/KPC_geoMX_exp2.RData")
-
+save(final, target_myData, neg_probes, file = "F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_10_25_2023.RData")
 
 
+PCAx<-1
+PCAy<-2
+PCAz<-3
 
+PCAxyz <- c(as.integer( PCAx ),as.integer( PCAy), as.integer(PCAz) ) # selected principal components
+
+
+pca.object <- prcomp(t(log2(assayDataElement(target_myData , elt = "q_norm"))))
+pcaData = as.data.frame(pca.object$x[, PCAxyz]); 
+pData(target_myData)[, c("PC1", "PC2", "PC3")] <- pcaData[,c(1,2,3)]
+percentVar=round(100*summary(pca.object)$importance[2, PCAxyz],0)
+
+
+ggplot(pData(target_myData),
+       aes(x = PC1, y = PC2, color = genotype, shape=region)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC", PCAx ,": ", percentVar[1], "% variance")) +
+  ylab(paste0("PC", PCAy ,": ", percentVar[2], "% variance")) +
+  scale_shape_manual(values=myshapes) +
+  theme_bw()
+
+library(plotly)
+
+m <- list(
+  l = 5,
+  r = 5,
+  b = 0,
+  t = 0,
+  pad = 0
+)
+fig <- plot_ly(pData(target_myData),
+               x = ~PC1, 
+               y = ~PC2, 
+               z = ~PC3, 
+               color = ~genotype,
+               symbol=~region, 
+               marker=list(size=4),
+               symbols = c('circle','diamond','cross',  'x', 'square','o','diamond-open','square-open'),
+               colors='Dark2',
+               width = 700, height = 700)
+
+fig <- fig %>% add_markers()
+fig <- fig %>% layout(scene = list(xaxis = list(title = paste0('PC1 (', percentVar[1],"%)" )),
+                                   yaxis = list(title = paste0('PC2 (', percentVar[2],"%)" )),
+                                   zaxis = list(title = paste0('PC3 (', percentVar[3],"%)" ))),
+                      margin=m)
+
+fig
 
 
 
