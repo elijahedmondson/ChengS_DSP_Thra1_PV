@@ -36,12 +36,13 @@ library(cowplot)
 library(umap)
 library(Rtsne)
 
-load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_10_25_2023.RData")
+load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_12_21_2023.RData")
 
 pData(target_myData)$region_geno
+pData(target_myData)$COMP2
 
 # convert test variables to factors
-pData(target_myData)$testRegion <- factor(pData(target_myData)$genotype)#, c("glands"))
+pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP2)#, c("glands"))
 pData(target_myData)[["slide"]] <-  factor(pData(target_myData)[["MHL number"]])
 assayDataElement(object = target_myData, elt = "log_q") <- assayDataApply(target_myData, 2, FUN = log, base = 2, elt = "q_norm")
 
@@ -79,7 +80,7 @@ dplyr::count(results, `Pr(>|t|)` < 0.05)
 results$invert_P <- (-log10(results$`Pr(>|t|)`)) * sign(results$Estimate)
 
 write <- dplyr::filter(results, FDR < 0.05 & abs(results$Estimate) > 0.5)
-write.csv(write, "F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG.csv")
+write.csv(write, "F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_12-21-23.csv")
 
 top_g <- c()
 for(genotype in c("PV/N", "N/N")) {

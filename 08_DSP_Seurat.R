@@ -6,38 +6,36 @@ library(DESeq2)
 library(MAST)
 
 
-# load("F:/GeoMX KPC/WTA_11232022/processed_data/KPC_geoMX_exp2.RData")
+# load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_12_21_2023.RData")
 # assayDataElementNames(target_myData)
-#  
+#
 # mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm")
 # mySeurat
-# save(mySeurat, target_myData, as.Seurat.NanoStringGeoMxSet, file="F:/GeoMX KPC/WTA_11232022/processed_data/KPC_geoMX_exp2_seurat.RData")
+# save(mySeurat, target_myData, as.Seurat.NanoStringGeoMxSet, file="F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat.RData")
 
-load("F:/GeoMX KPC/WTA_11232022/processed_data/KPC_geoMX_exp2_seurat.RData")
+load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat.RData")
 
+# head(mySeurat, 3)
+# mySeurat@misc[1:8]
+# head(mySeurat@misc$sequencingMetrics)# sequencing metrics
+# head(mySeurat@misc$QCMetrics$QCFlags) # QC metrics
+# head(mySeurat@assays$GeoMx@meta.features) # gene metadata
+# VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
 
-
-head(mySeurat, 3)
-mySeurat@misc[1:8]
-head(mySeurat@misc$sequencingMetrics)# sequencing metrics
-head(mySeurat@misc$QCMetrics$QCFlags) # QC metrics
-head(mySeurat@assays$GeoMx@meta.features) # gene metadata
+mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP2")
 VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
 
-mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "dx")
-VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
 
 
 
-
-mySeurat <- FindVariableFeatures(mySeurat)
+mySeurat <- FindVariableFeatures(mySeurat, ident = "COMP2")
 mySeurat <- ScaleData(mySeurat)
 mySeurat <- RunPCA(mySeurat, assay = "GeoMx", verbose = FALSE)
 mySeurat <- FindNeighbors(mySeurat, reduction = "pca", dims = seq_len(30))
-mySeurat <- FindClusters(mySeurat, verbose = FALSE)
+#mySeurat <- FindClusters(mySeurat, verbose = FALSE)
 mySeurat <- RunUMAP(mySeurat, reduction = "pca", dims = seq_len(30))
 
-DimPlot(mySeurat, reduction = "umap", pt.size = 5, label = TRUE, group.by = "dx")
+DimPlot(mySeurat, reduction = "umap", pt.size = 5, label = TRUE, group.by = "COMP2")
 
 
 levels(mySeurat)
@@ -45,39 +43,34 @@ levels(mySeurat)
 #                           "KPC(R172H)_Normal_","KPC(R172H)_PanIN_", "KPC(R172H)_PDAC_" ,
 #                           "KPC(R270H)_Normal_","KPC(R270H)_PanIN_","KPC(R270H)_PDAC_","KPC(R270H)_Metastasis_Liver",
 #                           "KPC(ortho)_PDAC_","KPC(ortho)_Metastasis_Liver")
-levels(x = mySeurat) <- c("KPC(ortho)_Metastasis_Liver","KPC(ortho)_PDAC_","KPC(R270H)_Metastasis_Liver","KPC(R270H)_PDAC_", 
-                          "KPC(R270H)_PanIN_","KPC(R270H)_Normal_","KPC(R172H)_PDAC_" ,"KPC(R172H)_PanIN_","KPC(R172H)_Normal_",
-                          "KPC_Metastasis_Lung","KPC_Metastasis_Liver","KPC_PDAC_","KPC_PanIN_","KPC_Normal_")                        levels(mySeurat) 
+
+levels(mySeurat)
+
+features <- c("Kras", "Trp53", "Cd274", "Cd8a", "Cd68", "Epcam","Cre",
+         "Tgfb1","Ccnd1","Cdk4","Thra","Thrb","Il33",	"Ctnnb1",
+         "Cdk6","Myc","Smad3","Smad4","Cdkn1a","Foxa2")
+
+features <- c("Lrp2", "Sult1d1", "Mme","Pkhd1",
+              "Hyal1","Spink1","Slc2a3","Angptl7",
+              "Peg10", "Sprr2d", "Igha", "Igkc",
+              "Noxa1","H1f1", "Ccl2", "Cxcl10")
 
 
-features <- c("Pecam1","Rhbdl2",
-              "Epha2","Epha3","Epha4","Epha5","Epha6","Epha7","Epha8")
-features <- c("Ephb1","Ephb2","Ephb3","Ephb4","Ephb6","Ephx1")
-features <- c("Efna2","Efna3","Efna4",
-              "Efnb1","Efnb2","Efnb3")
-
-features <- c("Sema7a","Sema3e","Sema4a","Sema4b","Sema4g","Efnb2", "Myo5b")
-features <- c("Rock2", "Rhoa","Rhoc","Rac1","Cdc42", "Vcam1", "Ezr")
-
-
-fig <- RidgePlot(mySeurat, sort = F, #split.by = "dx3.KPC",
+fig <- RidgePlot(mySeurat, sort = F, #split.by = "COMP2",
                  # idents = c("KPC_Normal_",
                  #            "KPC_PanIN_",
                  #            "KPC_PDAC_",
                  #            "KPC_Metastasis_Liver",
                  #            "KPC_Metastasis_Lung"),
-                 # idents = c("KPC(ortho)_Metastasis_Liver","KPC(ortho)_PDAC_","KPC(R270H)_Metastasis_Liver","KPC(R270H)_PDAC_",
-                 #            "KPC(R270H)_PanIN_","KPC(R270H)_Normal_","KPC(R172H)_PDAC_" ,"KPC(R172H)_PanIN_","KPC(R172H)_Normal_",
-                 #            "KPC_Metastasis_Lung","KPC_Metastasis_Liver","KPC_PDAC_","KPC_PanIN_","KPC_Normal_"), 
-                 features = features, 
-                 ncol = 3)
+                              features = features,
+                 ncol = 4)
 fig
 
 
-setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-tiff("fig.tiff", units="in", width=20, height=15, res=300)
-fig
-dev.off()
+# setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+# tiff("fig.tiff", units="in", width=20, height=15, res=300)
+# fig
+# dev.off()
 
 ###DEG
 ###DEG
@@ -93,18 +86,17 @@ dev.off()
 
 
 #NormlizeData() before "FindMarkers()
-de_markers <- FindMarkers(mySeurat, ident.1 = "KPC_PanIN_", ident.2 = "KPC_PDAC_", 
+levels(mySeurat)
+de_markers <- FindMarkers(mySeurat, ident.1 = "PV/N_glands", ident.2 = "N/N_glands",
                           test.use = "negbinom")
 
-de_markers <- FindAllMarkers(mySeurat, ident.1 = "KPC_PanIN_", ident.2 = "KPC_PDAC_", 
-                             test.use = "negbinom")
-
-# test.use = "wilcox" "bimod" "roc" "t" "poisson" "LR" "MAST" 
+# de_markers <- FindAllMarkers(mySeurat, ident.1 = "PV/N_mucosa", ident.2 = "N/N_mucosa",
+#                              test.use = "negbinom")
+#
+# test.use = "wilcox" "bimod" "roc" "t" "poisson" "LR" "MAST"
 #
 # "negbinom" -- appropriate for count
-# 
 # "DESeq2" -- appropriate for count -- need to initialize the mySeurat with count matrix
-#
 #
 
 # I partly figured this out and thought I would update in case someone else comes looking with the same issue.It seems that I was getting crazy LogFC's and weird looking volcanoes because of a problem with the normalization of my data. For these analyses I had used the Seurat "SCT integration" pipeline as outlined here: https://satijalab.org/seurat/v3.2/integration.html  I probably did something wrong, but after triple checking the workflow, I couldn't find it. When I switched back to an integration workflow that includes log normalization, rather than SCT normalization, everything appears to be fixed. So in the end, I am unsure of why the SCT integration pipeline failed on me, but switching to log normalization was the solution to my problem.
@@ -112,9 +104,9 @@ de_markers <- FindAllMarkers(mySeurat, ident.1 = "KPC_PanIN_", ident.2 = "KPC_PD
 results <- de_markers
 library(tibble)
 results <- tibble::rownames_to_column(results, "Gene")
-#results <- dplyr::filter(results, p_val < 0.05)
 
-library(ggrepel) 
+
+library(ggrepel)
 # Categorize Results based on P-value & FDR for plotting
 results$Color <- "NS or FC < 0.5"
 results$Color[results$p_val < 0.05] <- "P < 0.05"
@@ -127,37 +119,43 @@ results$Color <- factor(results$Color,
 
 # pick top genes for either side of volcano to label
 # order genes for convenience:
-results$invert_P <- (-log10(results$p_val)) * sign(results$avg_log2FC)
-top_g <- c()
-top_g <- c(top_g,
-           results[, 'Gene'][order(results[,'invert_P'], decreasing= T)[1:50]],
-           results[, 'Gene'][order(results[,'invert_P'], decreasing= F)[1:50]])
-top_g <- unique(top_g)
+# results$invert_P <- (-log10(results$p_val)) * sign(results$avg_log2FC)
+# top_g <- c()
+# top_g <- c(top_g,
+#            results[, 'Gene'][order(results[,'invert_P'], decreasing= T)[1:25]],
+#            results[, 'Gene'][order(results[,'invert_P'], decreasing= F)[1:25]])
+# top_g <- unique(top_g)
+# top_g
+#
+# # Graph results
+# vplot <- ggplot(results,                                                             ###CHANGE
+#        aes(x = avg_log2FC, y = -log10(p_val),
+#            color = Color, label = Gene)) +
+#   geom_vline(xintercept = c(0.5, -0.5), lty = "dashed") +
+#   geom_hline(yintercept = -log10(0.05), lty = "dashed") +
+#   geom_point() +
+#   labs(x = "N/N  <- log2(FC) -> PV/N",                                       ###CHANGE
+#        y = "Significance, -log10(P)",
+#        color = "Significance") +
+#   scale_color_manual(values = c(`FDR < 0.001` = "dodgerblue", `FDR < 0.05` = "lightblue",
+#                                 `P < 0.05` = "orange2",`NS or FC < 0.5` = "gray"),
+#                      guide = guide_legend(override.aes = list(size = 4))) +
+#   scale_y_continuous(expand = expansion(mult = c(0,0.05))) +
+#   geom_text_repel(data = subset(results, Gene %in% top_g),# & p_val_adj < 0.05),
+#                   size = 4, point.padding = 0.15, color = "black",
+#                   min.segment.length = .1, box.padding = .2, lwd = 2,
+#                   max.overlaps = 50) +
+#   theme_bw(base_size = 16) +
+#   theme(legend.position = "bottom")
+# vplot
+#
+# setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+# tiff("fig.tiff", units="in", width=12, height=8, res=300)
+# vplot
+# dev.off()
 
-
-# Graph results
-ggplot(results,                                                             ###CHANGE
-       aes(x = avg_log2FC, y = -log10(p_val),
-           color = Color, label = Gene)) +
-  geom_vline(xintercept = c(0.5, -0.5), lty = "dashed") +
-  geom_hline(yintercept = -log10(0.05), lty = "dashed") +
-  geom_point() +
-  labs(x = "___ <- log2(FC) -> ___",                                       ###CHANGE
-       y = "Significance, -log10(P)",
-       color = "Significance") +
-  scale_color_manual(values = c(`FDR < 0.001` = "dodgerblue", `FDR < 0.05` = "lightblue",
-                                `P < 0.05` = "orange2",`NS or FC < 0.5` = "gray"),
-                     guide = guide_legend(override.aes = list(size = 4))) +
-  scale_y_continuous(expand = expansion(mult = c(0,0.05))) +
-  geom_text_repel(data = subset(results, Gene %in% top_g),# & p_val_adj < 0.05),
-                  size = 4, point.padding = 0.15, color = "black",
-                  min.segment.length = .1, box.padding = .2, lwd = 2,
-                  max.overlaps = 50) +
-  theme_bw(base_size = 16) +
-  theme(legend.position = "bottom") 
-
-
-
+#results <- dplyr::filter(results, p_val_adj < 0.05)
+write.csv(results, "F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat/PVglands_Nglands.csv")
 
 
 
@@ -196,7 +194,7 @@ summary(resultsGO)
 
 ego <- enrichGO(gene          = resultsGO$ENTREZID,
                 keyType       = "ENTREZID",
-                universe      = universe$ENTREZID, ##list of all genes?? 
+                universe      = universe$ENTREZID, ##list of all genes??
                 OrgDb         = org.Mm.eg.db,
                 ont           = "MF", #"BP", "MF", and "CC"
                 pAdjustMethod = "BH",
@@ -212,9 +210,9 @@ plotGOgraph(ego, useFullNames = T, useInfo = "names")
 selected_pathways <- c("synapse organization",
                        "synaptogenesis",
                        "gliogenesis",
-                       "axonogenesis", 
+                       "axonogenesis",
                        "cell-substrate adhesion",
-                       "oligodendrocyte development", 
+                       "oligodendrocyte development",
                        "neurogenesis",
                        "cell-substrate adhesion",
                        "regulation of actin cytoskeleton organization")
@@ -276,17 +274,17 @@ summary(resultsGO)
 # resultsGO.up <- dplyr::filter(results, results$Estimate > 0.5)
 # resultsGO.down <- dplyr::filter(results, results$Estimate < -0.5)
 # write.csv(resultsGO.up,"C:/Users/edmondsonef/Desktop/resultsGO.up.csv")
-# 
+#
 # resultsGO.up <- read.csv("C:/Users/edmondsonef/Desktop/resultsGO.up.csv")
 # unique(resultsGO.up$Contrast)
 # resultsGO.down <- read.csv("C:/Users/edmondsonef/Desktop/resultsGO.down.csv")
 # unique(resultsGO.down$Contrast)
 # finalGL <- dplyr::bind_rows(resultsGO.down, resultsGO.up)
-# 
+#
 # head(finalGL)
 # names(finalGL)[7] <- 'Pr(>|t|)'
 # write.csv(finalGL, "C:/Users/edmondsonef/Desktop/DSP GeoMx/Results/GENE LIST 07.06.22_comps_MHL_WITH.int.csv")
-# 
+#
 
 #gcSample =  list of different samples
 resultsCC <- dplyr::select(resultsGO, Estimate, Contrast, ENTREZID)
@@ -319,10 +317,10 @@ for(i in 1:length(ids)){
   mt_list[[i]]<-  as.character(df$ENTREZID)
 }
 ###CHECK THAT ROW NAMES ARE ACCURATE
-names(mt_list) <- c(ids) 
+names(mt_list) <- c(ids)
 str(mt_list)
 mmu_kegg = download_KEGG(species = 'mmu', keggType = "KEGG", keyType = "kegg")
-ck <- compareCluster(geneCluster = mt_list, 
+ck <- compareCluster(geneCluster = mt_list,
                      #fun = "enrichKEGG", organism = "mmu")
                      #"groupGO", "enrichGO", "enrichKEGG", "enrichDO" or "enrichPathway"
                      fun = "enrichGO", ont = "BP", OrgDb = org.Mm.eg.db)
@@ -350,9 +348,9 @@ selected_pathways <- c("synapse organization",
                        "synaptogenesis",
                        #"alpha-amino acid metabolic process",
                        "gliogenesis",
-                       "axonogenesis", 
+                       "axonogenesis",
                        "cell-substrate adhesion",
-                       "oligodendrocyte development", 
+                       "oligodendrocyte development",
                        "neurogenesis",
                        "actin filament organization",
                        "regulation of translation",
@@ -362,18 +360,18 @@ selected_pathways <- c("synapse organization",
 dotplot(ck2, showCategory = selected_pathways, font.size=10)
 
 
-cnetplot(ck2, node_label="gene",showCategory = selected_pathways, 
-         cex_label_category = 1.2) 
+cnetplot(ck2, node_label="gene",showCategory = selected_pathways,
+         cex_label_category = 1.2)
 cnetplot(ck2, node_label="all", showCategory = selected_pathways,
-         cex_label_category = 3.2,cex_label_gene = 1.7)#, foldChange=geneList) 
+         cex_label_category = 3.2,cex_label_gene = 1.7)#, foldChange=geneList)
 
 
 
 
-emapplot(ck, legend_n=2) 
+emapplot(ck, legend_n=2)
 emapplot(ck, pie="count", cex_category=1.5, layout="kk")
 
-cnetplot(ck, circular = T, colorEdge = TRUE, showCategory = selected_pathways) 
+cnetplot(ck, circular = T, colorEdge = TRUE, showCategory = selected_pathways)
 
 
 p1 <- treeplot(ck2)
@@ -417,7 +415,7 @@ head(gene)
 ## assume 1st column is ID
 ## 2nd column is FC
 ## feature 1: numeric vector
-geneList = gene[,1] #which column? 
+geneList = gene[,1] #which column?
 head(geneList)
 
 names(geneList) = as.character(gene[,3])
@@ -455,30 +453,30 @@ ego <- pairwise_termsim(ego)
 ego2 <- simplify(ego, cutoff=0.7, by="p.adjust", select_fun=min)
 
 selected_pathways <- c("synapse organization",
-                       "axonogenesis", 
+                       "axonogenesis",
                        "cell-substrate adhesion")
 
 selected_pathways <- c("synapse organization",
                        "synaptogenesis",
                        "gliogenesis",
-                       "axonogenesis", 
+                       "axonogenesis",
                        "cell-substrate adhesion",
-                       "regulation of neurogenesis", 
+                       "regulation of neurogenesis",
                        "neurogenesis",
                        "cell-substrate adhesion",
                        "regulation of actin cytoskeleton organization")
 dotplot(ego2, showCategory = selected_pathways, font.size=10)
 cnetplot(ego2, node_label="all", categorySize="pvalue", showCategory = selected_pathways, foldChange=geneList)
-cnetplot(edox, foldChange=geneList, circular = T, colorEdge = TRUE, showCategory = "axonogenesis") 
+cnetplot(edox, foldChange=geneList, circular = T, colorEdge = TRUE, showCategory = "axonogenesis")
 heatplot(ego, foldChange=geneList, showCategory=selected_pathways)
 
 library(clusterProfiler)
 data(gcSample)
 xx <- compareCluster(gcSample, fun="enrichKEGG",
                      organism="hsa", pvalueCutoff=0.05)
-xx <- pairwise_termsim(xx)                     
+xx <- pairwise_termsim(xx)
 p1 <- emapplot(xx)
-p2 <- emapplot(xx, legend_n=2) 
+p2 <- emapplot(xx, legend_n=2)
 p3 <- emapplot(xx, pie="count")
 p4 <- emapplot(xx, pie="count", cex_category=1.5, layout="kk")
 ###
@@ -509,7 +507,7 @@ head(gene)
 names(gene)[1] <- 'Gene'
 head(gene)
 
-kable(subset(gene, Gene %in% c("Pdzd8", "Mtch2", "Spock3", "Serpina3k", "Cybrd1", "Vars2")), 
+kable(subset(gene, Gene %in% c("Pdzd8", "Mtch2", "Spock3", "Serpina3k", "Cybrd1", "Vars2")),
       row.names = FALSE)
 kable(subset(gene, Gene %in% c("Pdzd8")), row.names = FALSE)
 
@@ -551,9 +549,9 @@ ggplot(pData(target_myData),
   #            lty = "dashed", col = "darkgray") +
   geom_point(size = 3) +
   theme_bw() +
-  scale_x_continuous(trans = "log2") + 
+  scale_x_continuous(trans = "log2") +
   scale_y_continuous(trans = "log2") +
-  labs(x = "Trp53 Expression", y = "Msln Expression") 
+  labs(x = "Trp53 Expression", y = "Msln Expression")
 #+
 #facet_wrap(~class)
 
@@ -561,7 +559,7 @@ ggplot(pData(target_myData),
 # select top significant genes based on significance, plot with pheatmap
 GOI <- unique(subset(gene, `FDR` < 0.001)$Gene)
 pheatmap(log2(assayDataElement(target_myData[GOI, ], elt = "q_norm")),
-         scale = "row", 
+         scale = "row",
          show_rownames = FALSE, show_colnames = FALSE,
          border_color = NA,
          clustering_method = "average",
@@ -588,7 +586,7 @@ ggplot(subset(gene, !Gene %in% neg_probes),
            color = Color, label = Gene)) +
   geom_hline(yintercept = c(0.5, -0.5), lty = "dashed") +
   scale_x_continuous(trans = "log2") +
-  geom_point(alpha = 0.5) + 
+  geom_point(alpha = 0.5) +
   labs(y = "Enriched in XXX <- log2(FC) -> Enriched in XXX",
        x = "Mean Expression",
        color = "Significance") +
@@ -696,126 +694,126 @@ genelist <- dplyr::bind_rows(results.up1, results.down1)
 
 
 
-#' 
-#' 
-#' as.Seurat.NanoStringGeoMxSet <- function(x, ident = NULL, normData = NULL, 
-#'                                          coordinates = NULL, 
-#'                                          forceRaw = FALSE, ...){
-#'   
-#'   if (!try(requireNamespace("Seurat", quietly = TRUE))) {
-#'     stop("Please install Seurat from CRAN before converting to a Seurat object")
-#'   }else{
-#'     requireNamespace("Seurat", quietly = TRUE)
-#'   }
-#'   
-#'   
-#'   if(featureType(x) == "Probe"){
-#'     stop("Data must be on Target level before converting to a Seurat Object")
-#'   }
-#'   
-#'   if(is.null(normData)){
-#'     stop("normData must not be NULL, please provide name of normalized counts matrix")
-#'   }
-#'   
-#'   if(!normData %in% assayDataElementNames(x)){
-#'     stop(paste0("The normData name \"", normData, "\" is not a valid assay name. Valid names are: ", 
-#'                 paste(assayDataElementNames(x), collapse = ", ")))
-#'   }
-#'   
-#'   normFactor_names <- "normFactors|qFactors|negFactors|hkFactors|hknormFactors"
-#'   
-#'   if(length(grep(pattern = normFactor_names, names(sData(x)))) == 0 & 
-#'      forceRaw == FALSE){
-#'     stop("It is NOT recommended to use Seurat's normalization for GeoMx data. 
-#'              Normalize using GeomxTools::normalize() or set forceRaw to TRUE if you want to continue with Raw data")
-#'   }
-#'   
-#'   
-#'   sequencingMetrics <- c("FileVersion", "SoftwareVersion", "Date", "Plate_ID", 
-#'                          "Well", "SeqSetId", "Raw", "Trimmed", "Stitched", 
-#'                          "Aligned", "umiQ30", "rtsQ30", "DeduplicatedReads", 
-#'                          "NTC_ID", "NTC", "Trimmed (%)", "Stitched (%)", 
-#'                          "Aligned (%)", "Saturated (%)")
-#'   
-#'   QCMetrics <- "QCFlags"
-#'   
-#'   seuratConvert <- suppressWarnings(Seurat::CreateSeuratObject(counts = assayDataElement(x, normData), 
-#'                                                                assay = "GeoMx", 
-#'                                                                project = expinfo(experimentData(x))[["title"]]))
-#'   seuratConvert <- suppressWarnings(Seurat::AddMetaData(object = seuratConvert, 
-#'                                                         metadata = sData(x)[,!colnames(sData(x)) %in% 
-#'                                                                               c(sequencingMetrics,
-#'                                                                                 QCMetrics)]))
-#'   seuratConvert@assays$GeoMx <- Seurat::AddMetaData(object = seuratConvert@assays$GeoMx, 
-#'                                                     metadata = fData(x))
-#'   
-#'   if(!is.null(ident)){
-#'     if(!ident %in% colnames(seuratConvert@meta.data)){
-#'       stop(paste0("ident \"", ident, "\" not found in GeoMxSet Object"))
-#'     }
-#'     
-#'     Seurat::Idents(seuratConvert) <- seuratConvert[[ident]]
-#'   }
-#'   
-#'   
-#'   seuratConvert@misc <- otherInfo(experimentData(x)) 
-#'   seuratConvert@misc[["sequencingMetrics"]] <- sData(x)[colnames(sData(x)) %in% 
-#'                                                           sequencingMetrics]
-#'   seuratConvert@misc[["QCMetrics"]] <- sData(x)[colnames(sData(x)) %in% 
-#'                                                   QCMetrics]
-#'   
-#'   if(ncol(seuratConvert@misc[["QCMetrics"]]) == 0){
-#'     seuratConvert@misc[["QCMetrics"]] <- NULL
-#'   }
-#'   
-#'   if(!is.null(coordinates)){
-#'     xcoord <- coordinates[1]
-#'     ycoord <- coordinates[2]
-#'     
-#'     if(xcoord %in% colnames(seuratConvert@meta.data) & 
-#'        ycoord %in% colnames(seuratConvert@meta.data)){
-#'       coord.df <- data.frame(x=seuratConvert@meta.data[[xcoord]], 
-#'                              y=seuratConvert@meta.data[[ycoord]])
-#'       colnames(coord.df) <- coordinates
-#'       seuratConvert@meta.data <- seuratConvert@meta.data[!colnames(seuratConvert@meta.data) %in% 
-#'                                                            coordinates]
-#'     }else{
-#'       if(!xcoord %in% colnames(seuratConvert@meta.data) &
-#'          !ycoord %in% colnames(seuratConvert@meta.data)){
-#'         stop(paste0("xcoord \"", xcoord, "\" and ycoord \"", 
-#'                     ycoord, "\" not found in GeoMxSet Object"))
-#'       }
-#'       
-#'       if(!xcoord %in% colnames(seuratConvert@meta.data)){
-#'         stop(paste0("xcoord \"", xcoord, 
-#'                     "\" not found in GeoMxSet Object"))
-#'       }
-#'       
-#'       if(!ycoord %in% colnames(seuratConvert@meta.data)){
-#'         stop(paste0("ycoord \"", ycoord, 
-#'                     "\" not found in GeoMxSet Object"))
-#'       }
-#'     }
-#'     
-#'     rownames(coord.df) <- rownames(seuratConvert@meta.data)
-#'     
-#'     # need to create DSP specific image class
-#'     seuratConvert@images$image =  new(
-#'       Class = 'SlideSeq',
-#'       assay = "GeoMx",
-#'       key = "image_",
-#'       coordinates = coord.df
-#'     )
-#'   }
-#'   
-#'   return(seuratConvert)
-#' }
-#' 
-#' #' Convert Object to SpatialExperiment
-#' #' 
-#' #' @param x GeoMxSet object to convert 
-#' #' @param ... arguments to be passed to other methods
-#' #' 
-#' #' @export
-#' 
+
+
+as.Seurat.NanoStringGeoMxSet <- function(x, ident = NULL, normData = NULL,
+                                         coordinates = NULL,
+                                         forceRaw = FALSE, ...){
+
+  if (!try(requireNamespace("Seurat", quietly = TRUE))) {
+    stop("Please install Seurat from CRAN before converting to a Seurat object")
+  }else{
+    requireNamespace("Seurat", quietly = TRUE)
+  }
+
+
+  if(featureType(x) == "Probe"){
+    stop("Data must be on Target level before converting to a Seurat Object")
+  }
+
+  if(is.null(normData)){
+    stop("normData must not be NULL, please provide name of normalized counts matrix")
+  }
+
+  if(!normData %in% assayDataElementNames(x)){
+    stop(paste0("The normData name \"", normData, "\" is not a valid assay name. Valid names are: ",
+                paste(assayDataElementNames(x), collapse = ", ")))
+  }
+
+  normFactor_names <- "normFactors|qFactors|negFactors|hkFactors|hknormFactors"
+
+  if(length(grep(pattern = normFactor_names, names(sData(x)))) == 0 &
+     forceRaw == FALSE){
+    stop("It is NOT recommended to use Seurat's normalization for GeoMx data.
+             Normalize using GeomxTools::normalize() or set forceRaw to TRUE if you want to continue with Raw data")
+  }
+
+
+  sequencingMetrics <- c("FileVersion", "SoftwareVersion", "Date", "Plate_ID",
+                         "Well", "SeqSetId", "Raw", "Trimmed", "Stitched",
+                         "Aligned", "umiQ30", "rtsQ30", "DeduplicatedReads",
+                         "NTC_ID", "NTC", "Trimmed (%)", "Stitched (%)",
+                         "Aligned (%)", "Saturated (%)")
+
+  QCMetrics <- "QCFlags"
+
+  seuratConvert <- suppressWarnings(Seurat::CreateSeuratObject(counts = assayDataElement(x, normData),
+                                                               assay = "GeoMx",
+                                                               project = expinfo(experimentData(x))[["title"]]))
+  seuratConvert <- suppressWarnings(Seurat::AddMetaData(object = seuratConvert,
+                                                        metadata = sData(x)[,!colnames(sData(x)) %in%
+                                                                              c(sequencingMetrics,
+                                                                                QCMetrics)]))
+  seuratConvert@assays$GeoMx <- Seurat::AddMetaData(object = seuratConvert@assays$GeoMx,
+                                                    metadata = fData(x))
+
+  if(!is.null(ident)){
+    if(!ident %in% colnames(seuratConvert@meta.data)){
+      stop(paste0("ident \"", ident, "\" not found in GeoMxSet Object"))
+    }
+
+    Seurat::Idents(seuratConvert) <- seuratConvert[[ident]]
+  }
+
+
+  seuratConvert@misc <- otherInfo(experimentData(x))
+  seuratConvert@misc[["sequencingMetrics"]] <- sData(x)[colnames(sData(x)) %in%
+                                                          sequencingMetrics]
+  seuratConvert@misc[["QCMetrics"]] <- sData(x)[colnames(sData(x)) %in%
+                                                  QCMetrics]
+
+  if(ncol(seuratConvert@misc[["QCMetrics"]]) == 0){
+    seuratConvert@misc[["QCMetrics"]] <- NULL
+  }
+
+  if(!is.null(coordinates)){
+    xcoord <- coordinates[1]
+    ycoord <- coordinates[2]
+
+    if(xcoord %in% colnames(seuratConvert@meta.data) &
+       ycoord %in% colnames(seuratConvert@meta.data)){
+      coord.df <- data.frame(x=seuratConvert@meta.data[[xcoord]],
+                             y=seuratConvert@meta.data[[ycoord]])
+      colnames(coord.df) <- coordinates
+      seuratConvert@meta.data <- seuratConvert@meta.data[!colnames(seuratConvert@meta.data) %in%
+                                                           coordinates]
+    }else{
+      if(!xcoord %in% colnames(seuratConvert@meta.data) &
+         !ycoord %in% colnames(seuratConvert@meta.data)){
+        stop(paste0("xcoord \"", xcoord, "\" and ycoord \"",
+                    ycoord, "\" not found in GeoMxSet Object"))
+      }
+
+      if(!xcoord %in% colnames(seuratConvert@meta.data)){
+        stop(paste0("xcoord \"", xcoord,
+                    "\" not found in GeoMxSet Object"))
+      }
+
+      if(!ycoord %in% colnames(seuratConvert@meta.data)){
+        stop(paste0("ycoord \"", ycoord,
+                    "\" not found in GeoMxSet Object"))
+      }
+    }
+
+    rownames(coord.df) <- rownames(seuratConvert@meta.data)
+
+    # need to create DSP specific image class
+    seuratConvert@images$image =  new(
+      Class = 'SlideSeq',
+      assay = "GeoMx",
+      key = "image_",
+      coordinates = coord.df
+    )
+  }
+
+  return(seuratConvert)
+}
+
+#' Convert Object to SpatialExperiment
+#'
+#' @param x GeoMxSet object to convert
+#' @param ... arguments to be passed to other methods
+#'
+#' @export
+
 

@@ -9,8 +9,8 @@ projectname<-"Cheng_WTA1"
 datadir<-"F:/GeoMX KPC/Cheng_WTA1/raw_data"
 DCCdir<-"DCC-20230817"
 PKCfilename<-"Mm_R_NGS_WTA_v1.0.pkc"
-WorkSheet<-"final2.xlsx"
-final <- read_excel("F:/GeoMX KPC/Cheng_WTA1/raw_data/final2.xlsx")
+WorkSheet<-"final2_full.xlsx"
+final <- read_excel("F:/GeoMX KPC/Cheng_WTA1/raw_data/final2_full.xlsx")
 output_dir<-"processed_data/"
 
 DCCFiles <- list.files(file.path(datadir , DCCdir), pattern=".dcc$", full.names=TRUE)
@@ -23,19 +23,19 @@ myData<-readNanoStringGeoMxSet(dccFiles = DCCFiles,
                                phenoDataSheet = "Template",
                                phenoDataDccColName = "Sample_ID",
                                protocolDataColNames = c("aoi", "roi"),
-                               experimentDataColNames = c("panel")) 
+                               experimentDataColNames = c("panel"))
 
 #Shift counts to one to mimic how DSPDA handles zero counts
-myData <- shiftCountsOne(myData, elt="exprs", useDALogic=TRUE) 
+myData <- shiftCountsOne(myData, elt="exprs", useDALogic=TRUE)
 pkcs <- annotation(myData)
 modules <- gsub(".pkc", "", pkcs)
 
 ########
 ####  Segment QC
-# 
-# 
+#
+#
 # Before excluding any low-performing ROI/AOI segments, we visualize the distributions of the data for the different QC parameters.  The cutoffs used are:
-#   
+#
 #   * **Raw sequencing reads**: segments with <1000 raw reads are removed.
 # * **% Aligned,% Trimmed, or % Stitched sequencing reads**: segments below ~80% for one or more of these QC parameters are removed.
 # * **% Sequencing saturation ([1-deduplicated reads/aligned reads]%)**: segments below ~50% require additional sequencing to capture full sample diversity and are not typically analyzed until improved.
@@ -43,9 +43,9 @@ modules <- gsub(".pkc", "", pkcs)
 # * **No Template Control (NTC) count**: values >1,000 could indicate contamination for the segments associated with this NTC; however, in cases where the NTC count is between 1,000- 10,000, the segments may be used if the NTC data is uniformly low (e.g. 0-2 counts for all probes).
 # * **Nuclei**: >100 nuclei per segment is generally recommended; however, this cutoff is highly study/tissue dependent and may need to be reduced; what is most important is consistency in the nuclei distribution for segments within the study.  We use 20 in this case.
 # * **Area**: generally correlates with nuclei; a strict cutoff is not generally applied based on area.
-# 
+#
 # _***Note***:  You may need to change these cutoffs depending on your experimental setup._
-######## 
+########
 
 QC_params <-
   list(minSegmentReads = 1000, # Minimum number of reads (1000)
@@ -58,7 +58,7 @@ QC_params <-
        minNuclei = 20,         # Minimum # of cells observed in a segment (100)
        minArea = 1000)         # Minimum segment area (5000)
 myData <-
-  setSegmentQCFlags(myData, qcCutoffs = QC_params)        
+  setSegmentQCFlags(myData, qcCutoffs = QC_params)
 
 # Collate QC Results
 QCResults <- protocolData(myData)[["QCFlags"]]
@@ -79,7 +79,7 @@ QC_Summary["TOTAL FLAGS", ] <-
 
 
 
-col_by <- "region"
+col_by <- "COMP2"
 
 # Graphical summaries of QC statistics plot function
 QC_histogram <- function(assay_data = NULL,
@@ -115,12 +115,12 @@ QC_histogram(sData(myData), "Nuclei count", col_by, 10)
 
 #QC_histogram(sData(myData), "Aligned", col_by, 10000)
 # calculate the negative geometric means for each module
-negativeGeoMeans <- 
-  esBy(negativeControlSubset(myData), 
-       GROUP = "Module", 
-       FUN = function(x) { 
-         assayDataApply(x, MARGIN = 2, FUN = ngeoMean, elt = "exprs") 
-       }) 
+negativeGeoMeans <-
+  esBy(negativeControlSubset(myData),
+       GROUP = "Module",
+       FUN = function(x) {
+         assayDataApply(x, MARGIN = 2, FUN = ngeoMean, elt = "exprs")
+       })
 protocolData(myData)[["NegGeoMean"]] <- negativeGeoMeans
 
 # explicitly copy the Negative geoMeans from sData to pData
@@ -153,11 +153,11 @@ myData <- myData[, QCResults$QCStatus == "PASS"]
 dim(myData)
 
 ## ----setbioprobeqcflag,  eval = TRUE------------------------------------------
-# Generally keep the qcCutoffs parameters unchanged. Set removeLocalOutliers to 
+# Generally keep the qcCutoffs parameters unchanged. Set removeLocalOutliers to
 # FALSE if you do not want to remove local outliers
-myData <- setBioProbeQCFlags(myData, 
+myData <- setBioProbeQCFlags(myData,
                              qcCutoffs = list(minProbeRatio = 0.1,
-                                              percentFailGrubbs = 20), 
+                                              percentFailGrubbs = 20),
                              removeLocalOutliers = TRUE)
 
 ProbeQCResults <- fData(myData)[["QCFlags"]]
@@ -174,12 +174,12 @@ kable(qc_df, caption = "Probes flagged or passed as outliers")
 
 ## ----excludeOutlierProbes-----------------------------------------------------
 #Subset object to exclude all that did not pass Ratio & Global testing
-ProbeQCPassed <- 
-  subset(myData, 
+ProbeQCPassed <-
+  subset(myData,
          fData(myData)[["QCFlags"]][,c("LowProbeRatio")] == FALSE &
            fData(myData)[["QCFlags"]][,c("GlobalGrubbsOutlier")] == FALSE)
 dim(ProbeQCPassed)
-myData <- ProbeQCPassed 
+myData <- ProbeQCPassed
 
 ## ----aggregateCounts, eval = TRUE---------------------------------------------
 # Check how many unique targets the object has
@@ -204,7 +204,7 @@ for(module in modules) {
   if(all(vars[1:2] %in% colnames(pData(target_myData)))) {
     LOQ[, module] <-
       pmax(minLOQ,
-           pData(target_myData)[, vars[1]] * 
+           pData(target_myData)[, vars[1]] *
              pData(target_myData)[, vars[2]] ^ cutoff)
   }
 }
@@ -227,13 +227,13 @@ LOQ_Mat <- LOQ_Mat[fData(target_myData)$TargetName, ]
 
 ## ----segDetectionBarplot------------------------------------------------------
 # Save detection rate information to pheno data
-pData(target_myData)$GenesDetected <- 
+pData(target_myData)$GenesDetected <-
   colSums(LOQ_Mat, na.rm = TRUE)
 pData(target_myData)$GeneDetectionRate <-
   pData(target_myData)$GenesDetected / nrow(target_myData)
 
 # Determine detection thresholds: 1%, 5%, 10%, 15%, >15%
-pData(target_myData)$DetectionThreshold <- 
+pData(target_myData)$DetectionThreshold <-
   cut(pData(target_myData)$GeneDetectionRate,
       breaks = c(0, 0.01, 0.05, 0.1, 0.15,1),
       labels = c("<1%", "1-5%", "5-10%", "10-15%", ">15%"))
@@ -298,13 +298,8 @@ fData(target_myData)$DetectionRate <-
 # Gene of interest detection table
 
 goi <- c("Kras", "Trp53", "Cd274", "Cd8a", "Cd68", "Epcam","Cre",
-         "Krt18", "Notch1", "Notch2", "Notch3", "Notch4","Cldn8",
-         "Cdk6","Msh3","Myc","Mastl", "Sox2","Cav1","Fosl1","Gata4",
-         "Cldn18","Capn6","Cpa1","Muc5ac","Tff1","Smad4","Sox9",
-         "Ptf1a","Pdx1","Nr5a2","Neurog3","Bhlha15","Krt19","Dclk1",
-         "Fap","Hnf1b","Krt19","Ctrb1", "Hes1", "Smad4",
-         "Onecut1","Onecut2","Onecut3","Cdkn1a","Prss2","Runx1","Gata6",
-         "Gata6", "S100a11", "Nr5a2","Agr2", "Foxa2", "Fosl1","Ets2", "Runx3")
+         "Tgfb1","Ccnd1","Cdk4","Thra","Thrb","Il33",	"Ctnnb1",
+         "Cdk6","Myc","Smad3","Smad4","Cdkn1a","Agr2","Foxa2")
 
 
 goi_df <- data.frame(
@@ -344,8 +339,8 @@ ggplot(plot_detect, aes(x = as.factor(Freq), y = Rate, fill = Rate)) +
 #   Also manually include the negative control probe, for downstream use
 negativeProbefData <- subset(fData(target_myData), CodeClass == "Negative")
 neg_probes <- unique(negativeProbefData$TargetName)
-target_myData <- 
-  target_myData[fData(target_myData)$DetectionRate >= 0.035 |                    ########EFE change to include additional genes? 
+target_myData <-
+  target_myData[fData(target_myData)$DetectionRate >= 0.035 |                    ########EFE change to include additional genes?
                   fData(target_myData)$TargetName %in% neg_probes, ]
 dim(target_myData)
 
@@ -358,7 +353,7 @@ library(cowplot)   # for plot_grid
 
 # Graph Q3 value vs negGeoMean of Negatives
 ann_of_interest <- "class"
-Stat_data <- 
+Stat_data <-
   data.frame(row.names = colnames(exprs(target_myData)),
              Segment = colnames(exprs(target_myData)),
              Annotation = pData(target_myData)[, ann_of_interest],
@@ -401,13 +396,13 @@ plot_grid(plt1, btm_row, ncol = 1, labels = c("A", ""))
 ## ----normalizeObject, eval = TRUE---------------------------------------------
 # Q3 norm (75th percentile) for WTA/CTA  with or without custom spike-ins
 target_myData <- normalize(target_myData , data_type = "RNA",
-                           norm_method = "quant", 
+                           norm_method = "quant",
                            desiredQuantile = .75,
                            toElt = "q_norm")
 
 # Background normalization for WTA/CTA without custom spike-in
 target_myData <- normalize(target_myData , data_type = "RNA",
-                           norm_method = "neg", 
+                           norm_method = "neg",
                            fromElt = "exprs",
                            toElt = "neg_norm")
 
@@ -417,12 +412,12 @@ target_myData <- normalize(target_myData , data_type = "RNA",
 #         col = "#9EDAE5", main = "Raw Counts",
 #         log = "y", names = 1:79, xlab = "Segment",
 #         ylab = "Counts, Raw")
-# 
+#
 # boxplot(assayDataElement(target_myData[,1:79], elt = "q_norm"),
 #         col = "#2CA02C", main = "Q3 Norm Counts",
 #         log = "y", names = 1:79, xlab = "Segment",
 #         ylab = "Counts, Q3 Normalized")
-# 
+#
 # boxplot(assayDataElement(target_myData[,1:79], elt = "neg_norm"),
 #         col = "#FF7F0E", main = "Neg Norm Counts",
 #         log = "y", names = 1:79, xlab = "Segment",
@@ -439,7 +434,7 @@ custom_umap <- umap::umap.defaults
 custom_umap$random_state <- 42
 # run UMAP
 umap_out <-
-  umap(t(log2(assayDataElement(target_myData , elt = "q_norm"))),  
+  umap(t(log2(assayDataElement(target_myData , elt = "q_norm"))),
        config = custom_umap)
 pData(target_myData)[, c("UMAP1", "UMAP2")] <- umap_out$layout[, c(1,2)]
 
@@ -476,7 +471,7 @@ PCAxy <- c(as.integer( PCAx ),as.integer( PCAy) ) # selected principal component
 
 
 pca.object <- prcomp(t(log2(assayDataElement(target_myData , elt = "q_norm"))))
-pcaData = as.data.frame(pca.object$x[, PCAxy]); 
+pcaData = as.data.frame(pca.object$x[, PCAxy]);
 pData(target_myData)[, c("PC1", "PC2")] <- pcaData[,c(1,2)]
 percentVar=round(100*summary(pca.object)$importance[2, PCAxy],0)
 
@@ -513,7 +508,7 @@ GOI <- names(CV_dat)[CV_dat > quantile(CV_dat, 0.9)]
 
 
 pheatmap(assayDataElement(target_myData[GOI, ], elt = "log_q"),
-         scale = "row", 
+         scale = "row",
          main="Heatmap of high CV (>0.9) genes",
          show_rownames = F, show_colnames = FALSE,
          border_color = NA,
@@ -527,58 +522,5 @@ pheatmap(assayDataElement(target_myData[GOI, ], elt = "log_q"),
          cutree_cols = 4)
 
 
-save(final, target_myData, neg_probes, file = "F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_10_25_2023.RData")
-
-
-PCAx<-1
-PCAy<-2
-PCAz<-3
-
-PCAxyz <- c(as.integer( PCAx ),as.integer( PCAy), as.integer(PCAz) ) # selected principal components
-
-
-pca.object <- prcomp(t(log2(assayDataElement(target_myData , elt = "q_norm"))))
-pcaData = as.data.frame(pca.object$x[, PCAxyz]); 
-pData(target_myData)[, c("PC1", "PC2", "PC3")] <- pcaData[,c(1,2,3)]
-percentVar=round(100*summary(pca.object)$importance[2, PCAxyz],0)
-
-
-ggplot(pData(target_myData),
-       aes(x = PC1, y = PC2, color = genotype, shape=region)) +
-  geom_point(size = 4) +
-  xlab(paste0("PC", PCAx ,": ", percentVar[1], "% variance")) +
-  ylab(paste0("PC", PCAy ,": ", percentVar[2], "% variance")) +
-  scale_shape_manual(values=myshapes) +
-  theme_bw()
-
-library(plotly)
-
-m <- list(
-  l = 5,
-  r = 5,
-  b = 0,
-  t = 0,
-  pad = 0
-)
-fig <- plot_ly(pData(target_myData),
-               x = ~PC1, 
-               y = ~PC2, 
-               z = ~PC3, 
-               color = ~genotype,
-               symbol=~region, 
-               marker=list(size=4),
-               symbols = c('circle','diamond','cross',  'x', 'square','o','diamond-open','square-open'),
-               colors='Dark2',
-               width = 700, height = 700)
-
-fig <- fig %>% add_markers()
-fig <- fig %>% layout(scene = list(xaxis = list(title = paste0('PC1 (', percentVar[1],"%)" )),
-                                   yaxis = list(title = paste0('PC2 (', percentVar[2],"%)" )),
-                                   zaxis = list(title = paste0('PC3 (', percentVar[3],"%)" ))),
-                      margin=m)
-
-fig
-
-
-
+save(final, target_myData, neg_probes, file = "F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_12_21_2023.RData")
 
