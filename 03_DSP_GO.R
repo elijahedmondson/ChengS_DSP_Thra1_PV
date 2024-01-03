@@ -21,6 +21,7 @@ library(cowplot)
 library(ReactomePA)
 library(DOSE)
 library(msigdbr)
+library(readxl)
 #####
 #####GO
 #####
@@ -28,27 +29,32 @@ library(msigdbr)
 
 
 #load("C:/Users/edmondsonef/Desktop/DSP GeoMx/Results/KPC_geoMX_new.RData")
-results <- read.csv("F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat/PVglands_Nglands.csv")
+#results <- read.csv("F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat/PVglands_Nglands.csv")
 #results <- read.csv("F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat/PVmucosa_Nmucosa.csv")
 #results <- read.csv("F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat/PVstroma_Nstroma.csv")
-results <- read.csv("F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_12-21-23.csv")
+#results <- read.csv("F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_12-21-23.csv")
+
+
+results <- read_excel("C:/Users/edmondsonef/Desktop/ChengS_DSP Results/DEG/Cheng DEG list full.xlsx", sheet = "PV_stroma")
 
 head(results)
-names(results)[2] <- 'SYMBOL'
-names(results)[6] <- 'Pr(>|t|)'
+names(results)[1] <- 'SYMBOL'
+#names(results)[6] <- 'Pr(>|t|)'
 head(results)
 
 eg <- bitr(results$SYMBOL, fromType="SYMBOL", toType=c("ENTREZID"), OrgDb="org.Mm.eg.db")
 results <- dplyr::left_join(results, eg, by = "SYMBOL")
 rm(eg)
-universe <- distinct(results, SYMBOL, .keep_all = T)
+
+universe <- read.csv("C:/Users/edmondsonef/Desktop/ChengS_DSP Results/DEG/DEG_universe.csv")
+universe <- dplyr::select(universe,SYMBOL,ENTREZID)
+head(universe)
+
+universe <- distinct(universe, SYMBOL, .keep_all = T)
 head(universe)
 
 
-resultsGO <- dplyr::filter(results, abs(results$Estimate) > 0.5 & results$FDR < 0.05)
-summary(resultsGO)
-
-gene <- resultsGO
+gene <- results
 head(gene)
 
 ego <- enrichGO(gene          = gene$ENTREZID,
@@ -61,17 +67,24 @@ ego <- enrichGO(gene          = gene$ENTREZID,
                 qvalueCutoff  = 0.05,
                 readable      = TRUE)
 head(ego)
-p1 <- dotplot(ego, showCategory=30) + ggtitle("dotplot for ORA")
+p1 <- dotplot(ego, showCategory=15) + ggtitle("dotplot for ORA")
 p1
+setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+tiff("fig.tiff", units="in", width=12, height=12, res=250)
+p1
+dev.off()
+
+
+
 gene <- distinct(results, SYMBOL, .keep_all = T)
 head(gene)
 ## assume 1st column is ID
 ## 2nd column is FC
 ## feature 1: numeric vector
-geneList = gene[,4] #which column?
+geneList = gene[,3] #which column?
 head(geneList)
 
-names(geneList) = as.character(gene[,9])
+names(geneList) = as.character(gene[,1])
 head(geneList)
 geneList = sort(geneList, decreasing = T)
 head(geneList)

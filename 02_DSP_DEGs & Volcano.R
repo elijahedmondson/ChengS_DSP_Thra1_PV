@@ -36,23 +36,24 @@ library(cowplot)
 library(umap)
 library(Rtsne)
 
-load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_12_21_2023.RData")
+#load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_12_21_2023.RData")
+load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_1_3_2024.RData")
 
 pData(target_myData)$region_geno
 pData(target_myData)$COMP2
 
 # convert test variables to factors
-pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP2)#, c("glands"))
+pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP5, c("PV/N_glands_<5months", "N/N_glands_<5months"))
 pData(target_myData)[["slide"]] <-  factor(pData(target_myData)[["MHL number"]])
 assayDataElement(object = target_myData, elt = "log_q") <- assayDataApply(target_myData, 2, FUN = log, base = 2, elt = "q_norm")
 
 # run LMM:
 results <- c()
-for(region in c("glands", "mucosa", "stroma")) {
-  ind <- pData(target_myData)$region == region
+for(status in c("Full ROI", "PanCK pos")) {
+  ind <- pData(target_myData)$segment == status
   mixedOutmc <-
     mixedModelDE(target_myData[, ind], elt = "log_q",
-                 modelFormula = ~ testRegion + (1 + testRegion | slide), ##co-exist in a given tissue section
+                 modelFormula = ~ testRegion + (1 + testRegion | slide), ##INTERCEPT: structrues co-exist in a given tissue section
                  #modelFormula = ~ testRegion + (1 | slide),
                  groupVar = "testRegion",
                  nCores = parallel::detectCores(),
@@ -62,7 +63,7 @@ for(region in c("glands", "mucosa", "stroma")) {
   r_test <- as.data.frame(r_test)
   r_test$Contrast <- tests
   r_test$Gene <-  unlist(lapply(colnames(mixedOutmc), rep, nrow(mixedOutmc["lsmeans", ][[1]])))
-  r_test$Subset <- region
+  r_test$Subset <- status
   r_test$FDR <- p.adjust(r_test$`Pr(>|t|)`, method = "fdr")
   r_test <- r_test[, c("Gene", "Subset", "Contrast", "Estimate", "Pr(>|t|)", "FDR")]
   results <- rbind(results, r_test)
@@ -76,11 +77,12 @@ results$Color[results$FDR < 0.001] <- "FDR < 0.001"
 results$Color[abs(results$Estimate) < 0.5] <- "NS or FC < 0.5"
 results$Color <- factor(results$Color, levels = c("NS or FC < 0.5", "P < 0.05", "FDR < 0.05", "FDR < 0.001"))
 dplyr::count(results, FDR < 0.001)
+dplyr::count(results, FDR < 0.05)
 dplyr::count(results, `Pr(>|t|)` < 0.05)
 results$invert_P <- (-log10(results$`Pr(>|t|)`)) * sign(results$Estimate)
 
 write <- dplyr::filter(results, FDR < 0.05 & abs(results$Estimate) > 0.5)
-write.csv(write, "F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_12-21-23.csv")
+write.csv(write, "F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_1-3-24_withIntercept.csv")
 
 top_g <- c()
 for(genotype in c("PV/N", "N/N")) {
@@ -103,20 +105,20 @@ volc_plot <- ggplot(results,                                                    
   geom_vline(xintercept = c(0.5, -0.5), lty = "dashed") +
   geom_hline(yintercept = -log10(0.05), lty = "dashed") +
   geom_point() +
-  labs(x = "Glands <- log2(FC) -> Stroma",                                       ###CHANGE
+  labs(x = " <- log2(FC) -> ",                                       ###CHANGE
        y = "Significance, -log10(P)",
        color = "Significance") +
   scale_color_manual(values = c(`FDR < 0.001` = "dodgerblue", `FDR < 0.05` = "lightblue",
                                 `P < 0.05` = "orange2",`NS or FC < 0.5` = "gray"),
                      guide = guide_legend(override.aes = list(size = 4))) +
   scale_y_continuous(expand = expansion(mult = c(0,0.05))) +
-  geom_text_repel(data = subset(results, Gene %in% top_g & FDR < 0.001 & abs(results$Estimate1) > 0.7),
+  geom_text_repel(data = subset(results, Gene %in% top_g & FDR < 0.1 & abs(results$Estimate1) > 0.7),
                   size = 6, point.padding = 0.15, color = "black",
                   min.segment.length = .1, box.padding = .2, #lwd = 2,
                   max.overlaps = 50) +
   theme_bw(base_size = 15) +
-  theme(legend.position = "bottom")+
-  facet_wrap(~Subset, scales = "free_y")
+  theme(legend.position = "bottom")
+  #facet_wrap(~Subset, scales = "free_y")
 
 volc_plot
 
@@ -266,6 +268,8 @@ rm(eg)
 
 universe <- distinct(results, SYMBOL, .keep_all = T)
 head(universe)
+
+write.csv(universe, "F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_universe.csv")
 
 resultsGO <- dplyr::filter(results, abs(results$Estimate) > 0.5 & results$`Pr(>|t|)` < 0.05)
 #resultsGO <- dplyr::filter(results, abs(results$Estimate) > 0.5 & results$FDR < 0.05)

@@ -56,14 +56,30 @@ features <- c("Lrp2", "Sult1d1", "Mme","Pkhd1",
               "Noxa1","H1f1", "Ccl2", "Cxcl10")
 
 
-fig <- RidgePlot(mySeurat, sort = F, #split.by = "COMP2",
-                 # idents = c("KPC_Normal_",
-                 #            "KPC_PanIN_",
-                 #            "KPC_PDAC_",
-                 #            "KPC_Metastasis_Liver",
-                 #            "KPC_Metastasis_Lung"),
-                              features = features,
-                 ncol = 4)
+features <- c("Cd8a", "Cd68", "Cd80", "Cd55", "Cd38", "Cd86")
+
+features <- c("Col1a1", "Col1a2", "Col3a1", "Col4a1", "Col4a2", "Col4a4", "Col4a6",
+         "Col5a1", "Col5a2", "Col5a3", "Col6a1", "Col6a2","Col6a3", "Col7a1",
+         "Col8a2", "Col9a2", "Col10a1", "Col11a1", " Col11a2", "Col12a1",
+         "Col13a1", "Col14a1", "Col15a1", "Col16a1","Col18a1", "Col20a1",
+         "Col23a1", "Col24a1", "Col26a1", "Col27a1")
+
+features <- c("Ccnd1", "Cdk4", "Cdkn1a", "Prlr")
+
+features <- c("Thra","Thrb", "Aldh1a3", "Crym", "Ctsh", "Pkm")
+
+features <- c("Il33", "Il1a", "Myd88", "Tnf")
+
+features <- c("Ctnnb1", "Ctnnbip1", "Tcf7", "Lef1")
+
+features <- c("Myc", "Eno1", "Pfdn5", "Bmyc")
+
+features <- c("Smad1","Smad2","Smad3","Smad4", "Rr49")
+
+
+
+fig <- RidgePlot(mySeurat, sort = F, features = features,
+                 ncol = 3)
 fig
 
 
