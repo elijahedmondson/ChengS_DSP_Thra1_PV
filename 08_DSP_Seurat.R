@@ -6,14 +6,16 @@ library(DESeq2)
 library(MAST)
 
 
-# load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_12_21_2023.RData")
+# #load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_12_21_2023.RData")
+# load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_1_3_2024.RData")
 # assayDataElementNames(target_myData)
 #
 # mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm")
 # mySeurat
-# save(mySeurat, target_myData, as.Seurat.NanoStringGeoMxSet, file="F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat.RData")
+# save(mySeurat, final, target_myData, as.Seurat.NanoStringGeoMxSet,
+#      file="F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat2.RData")
 
-load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat.RData")
+load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat2.RData")
 
 # head(mySeurat, 3)
 # mySeurat@misc[1:8]
@@ -22,27 +24,40 @@ load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat.RData")
 # head(mySeurat@assays$GeoMx@meta.features) # gene metadata
 # VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
 
-mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP2")
+mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP5_age")
 VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
 
 
 
 
-mySeurat <- FindVariableFeatures(mySeurat, ident = "COMP2")
+mySeurat <- FindVariableFeatures(mySeurat, ident = "COMP5_age")
 mySeurat <- ScaleData(mySeurat)
 mySeurat <- RunPCA(mySeurat, assay = "GeoMx", verbose = FALSE)
 mySeurat <- FindNeighbors(mySeurat, reduction = "pca", dims = seq_len(30))
 #mySeurat <- FindClusters(mySeurat, verbose = FALSE)
 mySeurat <- RunUMAP(mySeurat, reduction = "pca", dims = seq_len(30))
 
-DimPlot(mySeurat, reduction = "umap", pt.size = 5, label = TRUE, group.by = "COMP2")
+DimPlot(mySeurat, reduction = "umap", pt.size = 5, label = TRUE, group.by = "COMP5_age")
 
 
 levels(mySeurat)
-# levels(x = mySeurat) <- c("KPC_Normal_","KPC_PanIN_","KPC_PDAC_","KPC_Metastasis_Liver","KPC_Metastasis_Lung",
-#                           "KPC(R172H)_Normal_","KPC(R172H)_PanIN_", "KPC(R172H)_PDAC_" ,
-#                           "KPC(R270H)_Normal_","KPC(R270H)_PanIN_","KPC(R270H)_PDAC_","KPC(R270H)_Metastasis_Liver",
-#                           "KPC(ortho)_PDAC_","KPC(ortho)_Metastasis_Liver")
+levels(x = mySeurat) <- c("PV/N_glands_<5months",
+                          "PV/N_mucosa_<5months",
+                          "PV/N_stroma_<5months",
+                          "PV/N_glands_5-6months",
+                          "PV/N_mucosa_5-6months",
+                          "PV/N_stroma_5-6months",
+                          "N/N_glands_<5months",
+                          "N/N_mucosa_<5months",
+                          "N/N_stroma_<5months",
+                          "N/N_glands_5-6months",
+                          "N/N_mucosa_5-6months",
+                          "N/N_stroma_5-6months",
+                          "N/N_glands_>6months",
+                          "N/N_mucosa_>6months",
+                          "N/N_stroma_>6months")
+
+
 
 levels(mySeurat)
 
@@ -64,11 +79,15 @@ features <- c("Col1a1", "Col1a2", "Col3a1", "Col4a1", "Col4a2", "Col4a4", "Col4a
          "Col13a1", "Col14a1", "Col15a1", "Col16a1","Col18a1", "Col20a1",
          "Col23a1", "Col24a1", "Col26a1", "Col27a1")
 
+features <- c("Col1a1", "Col1a2", "Col3a1", "Col4a1", "Col4a2",
+              "Col5a1","Col6a3","Col15a1", "Col16a1","Col18a1")
+
 features <- c("Ccnd1", "Cdk4", "Cdkn1a", "Prlr")
 
 features <- c("Thra","Thrb", "Aldh1a3", "Crym", "Ctsh", "Pkm")
 
 features <- c("Il33", "Il1a", "Myd88", "Tnf")
+features <- c("Il33", "Klf9", "Dio1", "Dio2","Dio3","Hr")
 
 features <- c("Ctnnb1", "Ctnnbip1", "Tcf7", "Lef1")
 
@@ -79,14 +98,26 @@ features <- c("Smad1","Smad2","Smad3","Smad4", "Rr49")
 
 
 fig <- RidgePlot(mySeurat, sort = F, features = features,
-                 ncol = 3)
+                 idents = c(#"PV/N_glands_<5months",
+                            #"PV/N_mucosa_<5months",
+                            #"PV/N_stroma_<5months",
+                            #"PV/N_glands_5-6months",
+                            #"PV/N_mucosa_5-6months",
+                            "PV/N_stroma_5-6months",
+                            #"N/N_glands_<5months",
+                            #"N/N_mucosa_<5months",
+                            #"N/N_stroma_<5months",
+                            #"N/N_glands_5-6months",
+                            #"N/N_mucosa_5-6months",
+                            "N/N_stroma_5-6months"),
+                 ncol = 5)
 fig
 
 
-# setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-# tiff("fig.tiff", units="in", width=20, height=15, res=300)
-# fig
-# dev.off()
+setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+tiff("fig.tiff", units="in", width=20, height=15, res=300)
+fig
+dev.off()
 
 ###DEG
 ###DEG
@@ -103,7 +134,7 @@ fig
 
 #NormlizeData() before "FindMarkers()
 levels(mySeurat)
-de_markers <- FindMarkers(mySeurat, ident.1 = "PV/N_glands", ident.2 = "N/N_glands",
+de_markers <- FindMarkers(mySeurat, ident.1 = "PV/N_mucosa_<5months", ident.2 = "N/N_mucosa_<5months",
                           test.use = "negbinom")
 
 # de_markers <- FindAllMarkers(mySeurat, ident.1 = "PV/N_mucosa", ident.2 = "N/N_mucosa",
@@ -133,45 +164,44 @@ results$Color <- factor(results$Color,
                         levels = c("NS or FC < 0.5", "P < 0.05",
                                    "FDR < 0.05", "FDR < 0.001"))
 
-# pick top genes for either side of volcano to label
-# order genes for convenience:
-# results$invert_P <- (-log10(results$p_val)) * sign(results$avg_log2FC)
-# top_g <- c()
-# top_g <- c(top_g,
-#            results[, 'Gene'][order(results[,'invert_P'], decreasing= T)[1:25]],
-#            results[, 'Gene'][order(results[,'invert_P'], decreasing= F)[1:25]])
-# top_g <- unique(top_g)
-# top_g
-#
-# # Graph results
-# vplot <- ggplot(results,                                                             ###CHANGE
-#        aes(x = avg_log2FC, y = -log10(p_val),
-#            color = Color, label = Gene)) +
-#   geom_vline(xintercept = c(0.5, -0.5), lty = "dashed") +
-#   geom_hline(yintercept = -log10(0.05), lty = "dashed") +
-#   geom_point() +
-#   labs(x = "N/N  <- log2(FC) -> PV/N",                                       ###CHANGE
-#        y = "Significance, -log10(P)",
-#        color = "Significance") +
-#   scale_color_manual(values = c(`FDR < 0.001` = "dodgerblue", `FDR < 0.05` = "lightblue",
-#                                 `P < 0.05` = "orange2",`NS or FC < 0.5` = "gray"),
-#                      guide = guide_legend(override.aes = list(size = 4))) +
-#   scale_y_continuous(expand = expansion(mult = c(0,0.05))) +
-#   geom_text_repel(data = subset(results, Gene %in% top_g),# & p_val_adj < 0.05),
-#                   size = 4, point.padding = 0.15, color = "black",
-#                   min.segment.length = .1, box.padding = .2, lwd = 2,
-#                   max.overlaps = 50) +
-#   theme_bw(base_size = 16) +
-#   theme(legend.position = "bottom")
-# vplot
-#
-# setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-# tiff("fig.tiff", units="in", width=12, height=8, res=300)
-# vplot
-# dev.off()
 
-#results <- dplyr::filter(results, p_val_adj < 0.05)
-write.csv(results, "F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat/PVglands_Nglands.csv")
+results$invert_P <- (-log10(results$p_val)) * sign(results$avg_log2FC)
+top_g <- c()
+top_g <- c(top_g,
+           results[, 'Gene'][order(results[,'invert_P'], decreasing= T)[1:30]],
+           results[, 'Gene'][order(results[,'invert_P'], decreasing= F)[1:30]])
+top_g <- unique(top_g)
+top_g
+
+# Graph results
+vplot <- ggplot(results,                                                             ###CHANGE
+       aes(x = avg_log2FC, y = -log10(p_val),
+           color = Color, label = Gene)) +
+  geom_vline(xintercept = c(0.5, -0.5), lty = "dashed") +
+  geom_hline(yintercept = -log10(0.05), lty = "dashed") +
+  geom_point() +
+  labs(x = " <- log2(FC) -> ",                                       ###CHANGE
+       y = "Significance, -log10(P)",
+       color = "Significance") +
+  scale_color_manual(values = c(`FDR < 0.001` = "dodgerblue", `FDR < 0.05` = "lightblue",
+                                `P < 0.05` = "orange2",`NS or FC < 0.5` = "gray"),
+                     guide = guide_legend(override.aes = list(size = 4))) +
+  scale_y_continuous(expand = expansion(mult = c(0,0.05))) +
+  geom_text_repel(data = subset(results, Gene %in% top_g),# & p_val_adj < 0.05),
+                  size = 4, point.padding = 0.15, color = "black",
+                  min.segment.length = .1, box.padding = .2, lwd = 2,
+                  max.overlaps = 50) +
+  theme_bw(base_size = 16) +
+  theme(legend.position = "bottom")
+vplot
+
+setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+tiff("fig.tiff", units="in", width=10, height=10, res=300)
+vplot
+dev.off()
+
+results <- dplyr::filter(results, p_val_adj < 0.05)
+write.csv(results, "F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat DEG/mucosa_young.csv")
 
 
 

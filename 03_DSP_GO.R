@@ -35,7 +35,7 @@ library(readxl)
 #results <- read.csv("F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_12-21-23.csv")
 
 
-results <- read_excel("C:/Users/edmondsonef/Desktop/ChengS_DSP Results/DEG/Cheng DEG list full.xlsx", sheet = "PV_stroma")
+results <- read_excel("C:/Users/edmondsonef/Desktop/ChengS_DSP Results/DEG/stroma_all.xlsx", sheet = "PV_up")
 
 head(results)
 names(results)[1] <- 'SYMBOL'
@@ -59,7 +59,7 @@ head(gene)
 
 ego <- enrichGO(gene          = gene$ENTREZID,
                 keyType       = "ENTREZID",
-                universe      = universe$ENTREZID, ##list of all genes??
+                universe      = as.character(universe$ENTREZID), ##list of all genes??
                 OrgDb         = org.Mm.eg.db,
                 ont           = "BP", #"BP", "MF", and "CC"
                 pAdjustMethod = "BH",
@@ -69,23 +69,17 @@ ego <- enrichGO(gene          = gene$ENTREZID,
 head(ego)
 p1 <- dotplot(ego, showCategory=15) + ggtitle("dotplot for ORA")
 p1
-setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-tiff("fig.tiff", units="in", width=12, height=12, res=250)
-p1
-dev.off()
+# setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+# tiff("fig.tiff", units="in", width=12, height=12, res=250)
+# p1
+# dev.off()
 
 
 
 gene <- distinct(results, SYMBOL, .keep_all = T)
-head(gene)
-## assume 1st column is ID
-## 2nd column is FC
-## feature 1: numeric vector
-geneList = gene[,3] #which column?
-head(geneList)
-
-names(geneList) = as.character(gene[,1])
-head(geneList)
+gene <- as.matrix(gene)
+geneList = as.numeric(gene[,3])
+names(geneList) = as.character(gene[,6])
 geneList = sort(geneList, decreasing = T)
 head(geneList)
 
@@ -96,7 +90,7 @@ head(geneList)
 ego2 <- gseGO(geneList     = geneList, ##??
               OrgDb        = org.Mm.eg.db,
               ont          = "BP", #"BP", "MF", and "CC"
-              minGSSize    = 100,
+              minGSSize    = 10,
               maxGSSize    = 500,
               pvalueCutoff = 0.05,
               verbose      = T)
@@ -106,7 +100,7 @@ p2 <- dotplot(ego2, showCategory=30) + ggtitle("dotplot for GSEA")
 fig <- cowplot::plot_grid(p1, p2, ncol=2, labels=LETTERS[1:2])
 fig
 setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-tiff("fig.tiff", units="in", width=18, height=18, res=250)
+tiff("fig.tiff", units="in", width=15, height=10, res=250)
 fig
 dev.off()
 
