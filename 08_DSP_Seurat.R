@@ -7,15 +7,15 @@ library(MAST)
 
 
 # #load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_12_21_2023.RData")
-# load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_1_3_2024.RData")
+# #load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_1_3_2024.RData")
+# load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_2_16_2024.RData")
 # assayDataElementNames(target_myData)
 #
 # mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm")
 # mySeurat
-# save(mySeurat, final, target_myData, as.Seurat.NanoStringGeoMxSet,
-#      file="F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat2.RData")
+# save(mySeurat, final, target_myData, as.Seurat.NanoStringGeoMxSet, file="F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat3.RData")
 
-load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat2.RData")
+load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat3.RData")
 
 # head(mySeurat, 3)
 # mySeurat@misc[1:8]
@@ -24,93 +24,72 @@ load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat2.RData")
 # head(mySeurat@assays$GeoMx@meta.features) # gene metadata
 # VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
 
-mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP5_age")
+mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP1")
+VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
+mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1")
 VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
 
 
 
 
 mySeurat <- FindVariableFeatures(mySeurat, ident = "COMP5_age")
+top50 <- head(VariableFeatures(mySeurat), 100)
+LabelPoints(plot = plot1, points = top50, repel = T)
+
+features <- c("Egln3", "Lrp2", "Slc34a2","Arg1","Hdc","Cxcl5","Ccl2",
+              "Calb1","Csf3","Rnf186","Sgk1","Lrg1","Postn","Cxcl10",
+              "Thrsp","Ier3", "Hr", "Klf9", "Dio3", "Shh",
+              "Aldh1a1","Aldh1a3", "Adamtsl4","Htra1", "Epas1", "Fto", "Crmp1",
+              "Pfkfb3", "Gbp3", "Gar22", "Desi1", "Trp53inp2","Stat5a","Aldoc",
+              "Cxcl1","Il1a","Sprr2b","Spp1","Ppp1r1b","Icam1","Clca1","Iglc1",
+              "Cxcl15","Aspg","Muc4","Spink12","Il17rb","Cfb","Cyp2f2",
+              "Thra", "Thrab", "Il33","Wnt7a","Uox","Nppc","Cxcl2",
+              "Slc26a7","Ncoa7","Trim15","Spink1", "Apobec2","Galm",
+              "Agr2","Aldh1a3","Bcl3","Ccn3","Add2","Cyp21a1","Sprr2e","Pkdcc")
+LabelPoints(plot = plot1, points = features, repel = T)
+
+
 mySeurat <- ScaleData(mySeurat)
+
 mySeurat <- RunPCA(mySeurat, assay = "GeoMx", verbose = FALSE)
+#mySeurat <- RunPCA(mySeurat, features = VariableFeatures(object = mySeurat))
+print(mySeurat[["pca"]], dims = 1:2, nfeatures = 3)
+DimPlot(mySeurat, reduction = "pca", pt.size = 5, label = TRUE, group.by = "COMP5_age")
+
+
 mySeurat <- FindNeighbors(mySeurat, reduction = "pca", dims = seq_len(30))
+
 #mySeurat <- FindClusters(mySeurat, verbose = FALSE)
+
 mySeurat <- RunUMAP(mySeurat, reduction = "pca", dims = seq_len(30))
-
-DimPlot(mySeurat, reduction = "umap", pt.size = 5, label = TRUE, group.by = "COMP5_age")
+DimPlot(mySeurat, reduction = "umap", pt.size = 5, label = TRUE, group.by = "COMP2")
 
 
 levels(mySeurat)
-levels(x = mySeurat) <- c("PV/N_glands_<5months",
-                          "PV/N_mucosa_<5months",
-                          "PV/N_stroma_<5months",
-                          "PV/N_glands_5-6months",
-                          "PV/N_mucosa_5-6months",
-                          "PV/N_stroma_5-6months",
-                          "N/N_glands_<5months",
-                          "N/N_mucosa_<5months",
-                          "N/N_stroma_<5months",
-                          "N/N_glands_5-6months",
-                          "N/N_mucosa_5-6months",
-                          "N/N_stroma_5-6months",
-                          "N/N_glands_>6months",
-                          "N/N_mucosa_>6months",
-                          "N/N_stroma_>6months")
+levels(x = mySeurat) <- c("PV/N_glands_<5 months",
+                          "PV/N_mucosa_<5 months",
+                          "PV/N_stroma_<5 months",
+                          "N/N_glands_<5 months",
+                          "N/N_mucosa_<5 months",
+                          "N/N_stroma_<5 months",
+                          "PV/N_glands_>5 months",
+                          "PV/N_mucosa_>5 months",
+                          "PV/N_stroma_>5 months",
+                          "N/N_glands_>5 months",
+                          "N/N_mucosa_>5 months",
+                          "N/N_stroma_>5 months")
 
 
 
 levels(mySeurat)
 
-features <- c("Kras", "Trp53", "Cd274", "Cd8a", "Cd68", "Epcam","Cre",
-         "Tgfb1","Ccnd1","Cdk4","Thra","Thrb","Il33",	"Ctnnb1",
-         "Cdk6","Myc","Smad3","Smad4","Cdkn1a","Foxa2")
-
-features <- c("Lrp2", "Sult1d1", "Mme","Pkhd1",
-              "Hyal1","Spink1","Slc2a3","Angptl7",
-              "Peg10", "Sprr2d", "Igha", "Igkc",
-              "Noxa1","H1f1", "Ccl2", "Cxcl10")
-
-
-features <- c("Cd8a", "Cd68", "Cd80", "Cd55", "Cd38", "Cd86")
-
-features <- c("Col1a1", "Col1a2", "Col3a1", "Col4a1", "Col4a2", "Col4a4", "Col4a6",
-         "Col5a1", "Col5a2", "Col5a3", "Col6a1", "Col6a2","Col6a3", "Col7a1",
-         "Col8a2", "Col9a2", "Col10a1", "Col11a1", " Col11a2", "Col12a1",
-         "Col13a1", "Col14a1", "Col15a1", "Col16a1","Col18a1", "Col20a1",
-         "Col23a1", "Col24a1", "Col26a1", "Col27a1")
-
-features <- c("Col1a1", "Col1a2", "Col3a1", "Col4a1", "Col4a2",
-              "Col5a1","Col6a3","Col15a1", "Col16a1","Col18a1")
-
-features <- c("Ccnd1", "Cdk4", "Cdkn1a", "Prlr")
-
-features <- c("Thra","Thrb", "Aldh1a3", "Crym", "Ctsh", "Pkm")
-
-features <- c("Il33", "Il1a", "Myd88", "Tnf")
-features <- c("Il33", "Klf9", "Dio1", "Dio2","Dio3","Hr")
-
-features <- c("Ctnnb1", "Ctnnbip1", "Tcf7", "Lef1")
-
-features <- c("Myc", "Eno1", "Pfdn5", "Bmyc")
-
-features <- c("Smad1","Smad2","Smad3","Smad4", "Rr49")
-
-
+features <- c("Klf9", "Dio3","Hr", "Thy1", "Sult1d1", "Lrp2")
+features <- c("Klf4", "Prap1","Muc4", "Il33", "Agr2", "Wnt7a")
 
 fig <- RidgePlot(mySeurat, sort = F, features = features,
-                 idents = c(#"PV/N_glands_<5months",
-                            #"PV/N_mucosa_<5months",
-                            #"PV/N_stroma_<5months",
-                            #"PV/N_glands_5-6months",
-                            #"PV/N_mucosa_5-6months",
-                            "PV/N_stroma_5-6months",
-                            #"N/N_glands_<5months",
-                            #"N/N_mucosa_<5months",
-                            #"N/N_stroma_<5months",
-                            #"N/N_glands_5-6months",
-                            #"N/N_mucosa_5-6months",
-                            "N/N_stroma_5-6months"),
-                 ncol = 5)
+                 idents = c("epithelium_PV/N",
+                            "epithelium_N/N"),
+                 ncol = 1)
 fig
 
 
@@ -134,19 +113,8 @@ dev.off()
 
 #NormlizeData() before "FindMarkers()
 levels(mySeurat)
-de_markers <- FindMarkers(mySeurat, ident.1 = "PV/N_mucosa_<5months", ident.2 = "N/N_mucosa_<5months",
-                          test.use = "negbinom")
+de_markers <- FindMarkers(mySeurat, ident.1 = "stroma_PV/N", ident.2 = "stroma_N/N",test.use = "negbinom")
 
-# de_markers <- FindAllMarkers(mySeurat, ident.1 = "PV/N_mucosa", ident.2 = "N/N_mucosa",
-#                              test.use = "negbinom")
-#
-# test.use = "wilcox" "bimod" "roc" "t" "poisson" "LR" "MAST"
-#
-# "negbinom" -- appropriate for count
-# "DESeq2" -- appropriate for count -- need to initialize the mySeurat with count matrix
-#
-
-# I partly figured this out and thought I would update in case someone else comes looking with the same issue.It seems that I was getting crazy LogFC's and weird looking volcanoes because of a problem with the normalization of my data. For these analyses I had used the Seurat "SCT integration" pipeline as outlined here: https://satijalab.org/seurat/v3.2/integration.html  I probably did something wrong, but after triple checking the workflow, I couldn't find it. When I switched back to an integration workflow that includes log normalization, rather than SCT normalization, everything appears to be fixed. So in the end, I am unsure of why the SCT integration pipeline failed on me, but switching to log normalization was the solution to my problem.
 
 results <- de_markers
 library(tibble)
@@ -168,10 +136,28 @@ results$Color <- factor(results$Color,
 results$invert_P <- (-log10(results$p_val)) * sign(results$avg_log2FC)
 top_g <- c()
 top_g <- c(top_g,
-           results[, 'Gene'][order(results[,'invert_P'], decreasing= T)[1:30]],
-           results[, 'Gene'][order(results[,'invert_P'], decreasing= F)[1:30]])
+           results[, 'Gene'][order(results[,'invert_P'], decreasing= T)[1:40]],
+           results[, 'Gene'][order(results[,'invert_P'], decreasing= F)[1:40]])
 top_g <- unique(top_g)
 top_g
+
+
+features <- c("Slc2a3","Hyal1","Lbp","Nexmif","Il17rb","Sult1d1","Znhit6",
+              "Asph","Angptl7","St6galnac5","Pim3","Krt83","Gng12","Faim2",
+              "C3","Prap1","Pglyrp1","Ltf","Lcn2","Fcgbp","Cfb","Gjb2", "Aoc1",
+              "Trpv6", "Ppp1r1b","Egln3", "Lrp2", "Slc34a2","Arg1","Hdc","Cxcl5","Ccl2",
+              "Calb1","Csf3","Rnf186","Sgk1","Lrg1","Postn","Cxcl10",
+              "Thrsp","Ier3", "Hr", "Klf9", "Dio3", "Shh",
+              "Aldh1a1","Aldh1a3", "Adamtsl4","Htra1", "Epas1", "Fto", "Crmp1",
+              "Pfkfb3", "Gbp3", "Gar22", "Desi1", "Trp53inp2","Stat5a","Aldoc",
+              "Cxcl1","Il1a","Sprr2b","Spp1","Ppp1r1b","Icam1","Clca1","Iglc1",
+              "Cxcl15","Aspg","Muc4","Spink12","Il17rb","Cfb","Cyp2f2",
+              "Thra", "Thrab", "Il33","Wnt7a","Uox","Nppc","Cxcl2",
+              "Slc26a7","Ncoa7","Trim15","Spink1", "Apobec2","Galm",
+              "Agr2","Aldh1a3","Bcl3","Ccn3","Add2","Cyp21a1","Sprr2e","Pkdcc", "Wnt7a", "Thy1",
+              "Igha","Igkc","Ptn","Krt15","Chil1","Jchain","Krt5","Gas2l3","Krt14","Serpinb11","Aspg","Ctla2a",
+              "Col15a1", "Sprr2d")
+
 
 # Graph results
 vplot <- ggplot(results,                                                             ###CHANGE
@@ -180,14 +166,14 @@ vplot <- ggplot(results,                                                        
   geom_vline(xintercept = c(0.5, -0.5), lty = "dashed") +
   geom_hline(yintercept = -log10(0.05), lty = "dashed") +
   geom_point() +
-  labs(x = " <- log2(FC) -> ",                                       ###CHANGE
+  labs(x = "N/N <- log2(FC) -> PV/N",                                       ###CHANGE
        y = "Significance, -log10(P)",
        color = "Significance") +
   scale_color_manual(values = c(`FDR < 0.001` = "dodgerblue", `FDR < 0.05` = "lightblue",
                                 `P < 0.05` = "orange2",`NS or FC < 0.5` = "gray"),
                      guide = guide_legend(override.aes = list(size = 4))) +
   scale_y_continuous(expand = expansion(mult = c(0,0.05))) +
-  geom_text_repel(data = subset(results, Gene %in% top_g),# & p_val_adj < 0.05),
+  geom_text_repel(data = subset(results, Gene %in% features & p_val < 0.05 & abs(avg_log2FC) >0.5),
                   size = 4, point.padding = 0.15, color = "black",
                   min.segment.length = .1, box.padding = .2, lwd = 2,
                   max.overlaps = 50) +
@@ -196,12 +182,103 @@ vplot <- ggplot(results,                                                        
 vplot
 
 setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-tiff("fig.tiff", units="in", width=10, height=10, res=300)
+tiff("fig.tiff", units="in", width=8, height=8, res=200)
 vplot
 dev.off()
 
+
 results <- dplyr::filter(results, p_val_adj < 0.05)
-write.csv(results, "F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat DEG/mucosa_young.csv")
+write.csv(results, "F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat DEG/stroma.csv")
+
+
+
+
+
+
+
+levels(mySeurat)
+de_ALLmarkers <- FindAllMarkers(mySeurat, grouping.var = "indent", verbose = T, test.use = "negbinom")
+
+
+library(dplyr)
+
+DEG_all <- de_ALLmarkers %>%
+  group_by(cluster) %>%
+  dplyr::filter(avg_log2FC > 1)
+write.csv(DEG_all,"C:/Users/edmondsonef/Desktop/de_ALLmarkers.csv")
+
+top10 <- DEG_all %>% group_by(cluster) %>% dplyr::top_n(20, avg_log2FC)
+DefaultAssay(mySeurat) <- 'integrated'
+S2 <- ScaleData(mySeurat, features=rownames(mySeurat))
+DefaultAssay(S2) <- 'integrated'
+
+idents.1 <- WhichCells(S2, idents = c("epithelium_PV/N",
+                                      "stroma_PV/N",
+                                      "epithelium_N/N",
+                                      "stroma_N/N"))
+
+idents.2 <- WhichCells(S2, idents = c("PV/N_glands_5-6months",
+                                      "PV/N_mucosa_5-6months",
+                                      "PV/N_stroma_5-6months",
+                                      "N/N_glands_5-6months",
+                                      "N/N_mucosa_5-6months",
+                                      "N/N_stroma_5-6months"))
+#"N/N_glands_5-6months",
+#"N/N_mucosa_5-6months",
+#"N/N_stroma_5-6months"))
+hm1 <- DoHeatmap(S2, cells = idents.1)
+hm2 <- DoHeatmap(S2, cells = cells.2)
+
+fig <- DoHeatmap(object = S2, cells = idents.1, features = top10, group.by = "COMP1", group.bar = TRUE, group.colors = NULL,
+                 disp.min = -2.5, disp.max = NULL, slot = "scale.data", assay = NULL, label = T,
+                 size = 5.5, hjust = 0, angle = 45, raster = TRUE, draw.lines = TRUE, lines.width = NULL,
+                 group.bar.height = 0.02, combine = TRUE)
+fig
+
+setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+tiff("fig.tiff", units="in", width=20, height=22, res=300)
+fig
+dev.off()
+
+
+
+
+mySeurat <- RunPCA(mySeurat, features = VariableFeatures(object = mySeurat))
+print(mySeurat[["pca"]], dims = 1:5, nfeatures = 5)
+VizDimLoadings(mySeurat, dims = 1:5, reduction = "pca")
+
+#
+# test.use =
+# "wilcox" "bimod" "roc" "t" "poisson" "LR" "MAST"
+# "negbinom" -- appropriate for count
+# "DESeq2" -- appropriate for count (need to initialize the mySeurat with count matrix)
+#
+# Identify genes in the top 3rd of the CV values
+
+mySeurat <- FindVariableFeatures(mySeurat, selection.method = "vst", nfeatures = 2000)
+
+# Identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(mySeurat), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(mySeurat)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot1 + plot2
+
+
+# I partly figured this out and thought I would update in case someone else comes looking with the same issue.It seems that I was getting crazy LogFC's and weird looking volcanoes because of a problem with the normalization of my data. For these analyses I had used the Seurat "SCT integration" pipeline as outlined here: https://satijalab.org/seurat/v3.2/integration.html  I probably did something wrong, but after triple checking the workflow, I couldn't find it. When I switched back to an integration workflow that includes log normalization, rather than SCT normalization, everything appears to be fixed. So in the end, I am unsure of why the SCT integration pipeline failed on me, but switching to log normalization was the solution to my problem.
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -253,11 +330,11 @@ dotplot(ego)
 upsetplot(ego)
 plotGOgraph(ego, useFullNames = T, useInfo = "names")
 
-selected_pathways <- c("synapse organization",
-                       "synaptogenesis",
-                       "gliogenesis",
-                       "axonogenesis",
-                       "cell-substrate adhesion",
+selected_pathways <- c("thyroid hormone receptor binding",
+                       "thyroid hormone receptor activity",
+                       "thyroid-stimulating hormone receptor activity",
+                       "thyroid hormone receptor coactivator activity",
+                       "thyroid hormone metabolic process",
                        "oligodendrocyte development",
                        "neurogenesis",
                        "cell-substrate adhesion",
@@ -285,10 +362,7 @@ str(ego)
 #####
 
 #load("C:/Users/edmondsonef/Desktop/DSP GeoMx/Results/KPC_geoMX_new.RData")
-#results <- read.csv("C:/Users/edmondsonef/Desktop/DSP GeoMx/Results/07.06.22_comps_MHL_no.int.csv")
-#results <- read.csv("C:/Users/edmondsonef/Desktop/DSP GeoMx/Results/07.06.22_comps_MHL_WITH.int.csv")
-#results <- read.csv("C:/Users/edmondsonef/Desktop/DSP GeoMx/Results/07.08.22_class_MHL_no_int.csv")
-#results <- read.csv("C:/Users/edmondsonef/Desktop/DSP GeoMx/Results/GENELIST_11-2-22_MHL_class_with_int.csv")
+
 results <- read.csv("C:/Users/edmondsonef/Desktop/DSP GeoMx/Results/GENE LIST 07.06.22_comps_MHL_WITH.int.csv")
 #results <- read.csv("C:/Users/edmondsonef/Desktop/DSP GeoMx/Results/11-3-22_MHL_progression2_with_int.csv")
 
@@ -306,13 +380,7 @@ head(universe)
 
 resultsGO <- dplyr::filter(results, abs(results$Estimate) > 0.5)# & results$FDR < 0.1)
 #resultsGO <- dplyr::filter(results, results$Estimate > 0.5 & results$'Pr(>|t|)' < 0.05)
-#resultsGO <- dplyr::filter(results, results$Estimate < -0.5 & results$FDR < 0.05)
-#resultsGO <- dplyr::filter(results, results$Estimate < -0.5 & results$'Pr(>|t|)' < 0.05)
 
-resultsGO <- dplyr::filter(results, abs(results$Estimate) > 0.5 & results$FDR < 0.1)
-#resultsGO <- dplyr::filter(results, abs(results$Estimate) > 1.0 & results$'Pr(>|t|)' < 0.05)
-#resultsGO <- dplyr::filter(results, abs(results$Estimate) > 0.5 & results$FDR < 0.05)
-#resultsGO <- dplyr::filter(results, abs(results$Estimate) > 1.0 & results$FDR < 0.01)
 summary(resultsGO)
 
 
@@ -335,20 +403,6 @@ summary(resultsGO)
 #gcSample =  list of different samples
 resultsCC <- dplyr::select(resultsGO, Estimate, Contrast, ENTREZID)
 unique(resultsCC$Contrast)
-
-# resultsCC <- dplyr::filter(resultsCC, Contrast == c("1-Normal acini - 4-PanINlo",
-#                                                   "1-Normal acini - 5-PanINhi",
-#                                                   "5-PanINhi - 6-PDAC",
-#                                                   "4-PanINlo - 6-PDAC"))
-
-
-# resultsCC <- dplyr::filter(resultsCC, Contrast == c("ADM", "Bystander",
-#                                                   "Acinar",
-#                                                   "PanIN",
-#                                                   "Carcinoma",
-#                                                   "Islet",
-#                                                   "IPMN",
-#                                                   "Stroma"))
 resultsCC <- dplyr::filter(resultsCC, Contrast == c("ADM",
                                                     "Normal acini",
                                                     "PanIN",

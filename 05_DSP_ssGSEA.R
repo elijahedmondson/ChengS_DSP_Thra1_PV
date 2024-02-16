@@ -14,7 +14,6 @@ library(matrixStats)
 library(ComplexHeatmap)
 library(matrixStats)
 library(circlize)
-library(clusterProfiler)
 
 
 # load("F:/GeoMX KPC/WTA_04122022/processed_data/KPC_geoMX_exp1.RData")
@@ -49,7 +48,7 @@ goannot <- filter(goannot, ONTOLOGY == "BP")
 genesbygo <- split(goannot$ENTREZID, goannot$GO)
 length(genesbygo)
 
-colnames(new_dfs)<-target_myData@phenoData@data$COMP5
+colnames(new_dfs)<-target_myData@phenoData@data$COMP6_young
 head(new_dfs)
 
 new_dfs <- as.matrix(new_dfs)
@@ -63,7 +62,7 @@ ssGSEA <- gsva(new_dfs,
                parallel.sz=1)
 
 
-
+head(ssGSEA)
 
 colnames(ssGSEA)
 rownames(ssGSEA)
@@ -88,7 +87,7 @@ colnames(mat)
 mat <- mat[,c(6,13,14,15,19,21,25,26,27,28,29,30,32,41,42,45,46,47,49,50,55,57,58,59,64,69,72,74)]
 
 mat <- as.data.frame(mat)
-keywords <- c("axon", "nerve", "dendrite ", "myelin", "synapse", "neuron")
+
 keywords <- c("angiogenesis", "hypoxia", "oxygen", "DNA")
 keywords <- c("p53", "apoptosis", "senescence", "cell cycle", "superoxide")
 mat1 <- mat %>% filter(grepl(paste(keywords,collapse="|"), rownames(mat)))
@@ -96,14 +95,14 @@ rownames(mat1)
 mat1 <- as.matrix(mat1)
 mat1 <- subset(mat1, (rowMax(mat1) + abs(rowMin(mat1))) > 3.5)
 rownames(mat1)
-
-mat1 <- as.matrix(mat1)
 Heatmap(mat1, col = colorRamp2(c(-2,0,2), c("orangered", "white", "purple")))
 
 
 
+
+
 mat <- as.matrix(mat)
-mat1 <- subset(mat, (rowMax(mat) + abs(rowMin(mat))) > 4.75)
+mat1 <- subset(mat, (rowMax(mat) + abs(rowMin(mat))) > 7.5)
 rownames(mat1)
 
 
@@ -116,14 +115,14 @@ Heatmap(mat1, col = colorRamp2(c(-2,0,2), c("orangered", "white", "purple")))
 
 pheatmap(mat1,
          scale = "row", 
-         show_rownames = T, show_colnames = T,
+         show_rownames = T, show_colnames = F,
          border_color = NA,
          clustering_method = "average",
          clustering_distance_rows = "correlation",
          clustering_distance_cols = "correlation",
          #breaks = seq(-3, 3, 0.05),
          color = colorRampPalette(c("orangered", "white", "purple"))(120),
-         annotation_col =  pData(target_myData)[, c("dx", "Sex")])
+         annotation_col =  pData(target_myData)[, c("genotype","region")])
 
 
 

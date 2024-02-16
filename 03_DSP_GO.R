@@ -33,12 +33,11 @@ library(readxl)
 #results <- read.csv("F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat/PVmucosa_Nmucosa.csv")
 #results <- read.csv("F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat/PVstroma_Nstroma.csv")
 #results <- read.csv("F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_12-21-23.csv")
-
-
-results <- read_excel("C:/Users/edmondsonef/Desktop/ChengS_DSP Results/DEG/stroma_all.xlsx", sheet = "PV_up")
+#results <- read_excel("C:/Users/edmondsonef/Desktop/ChengS_DSP Results/DEG/mucosa_all.xlsx", sheet = "PV_down")
+results <- read.csv("C:/Users/edmondsonef/Desktop/ChengS_DSP Results/DEG/Lists/FULL_PV_stroma.csv")
 
 head(results)
-names(results)[1] <- 'SYMBOL'
+names(results)[2] <- 'SYMBOL'
 #names(results)[6] <- 'Pr(>|t|)'
 head(results)
 
@@ -61,20 +60,25 @@ ego <- enrichGO(gene          = gene$ENTREZID,
                 keyType       = "ENTREZID",
                 universe      = as.character(universe$ENTREZID), ##list of all genes??
                 OrgDb         = org.Mm.eg.db,
-                ont           = "BP", #"BP", "MF", and "CC"
+                ont           = "MF", #"BP", "MF", and "CC"
                 pAdjustMethod = "BH",
                 pvalueCutoff  = 0.01,
                 qvalueCutoff  = 0.05,
                 readable      = TRUE)
 head(ego)
-p1 <- dotplot(ego, showCategory=15) + ggtitle("dotplot for ORA")
+p1 <- dotplot(ego, showCategory=25) + ggtitle("dotplot for ORA")
 p1
-# setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-# tiff("fig.tiff", units="in", width=12, height=12, res=250)
-# p1
-# dev.off()
 
+setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+tiff("Full_N_mucosa.tiff", units="in", width=12, height=12, res=250)
+p1
+dev.off()
 
+selected_pathways <- c("thyroid hormone receptor activity",
+                       "thyroid hormone receptor binding",
+                       "cellular response to lipid")
+p1 <- dotplot(ego, showCategory=selected_pathways) + ggtitle("dotplot for ORA")
+p1
 
 gene <- distinct(results, SYMBOL, .keep_all = T)
 gene <- as.matrix(gene)

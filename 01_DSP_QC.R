@@ -455,7 +455,7 @@ tsne_out <-
         perplexity = ncol(target_myData)*.15)
 pData(target_myData)[, c("tSNE1", "tSNE2")] <- tsne_out$Y[, c(1,2)]
 tsneplot <- ggplot(pData(target_myData),
-       aes(x = tSNE1, y = tSNE2, color = age_months, shape = genotype, label=`Nuclei count`, size = 5)) +
+       aes(x = tSNE1, y = tSNE2, color = age_young_old, shape = genotype, label=`region`, size = 5)) +
   geom_point(size = 3) +geom_text(hjust=1.1, vjust=0.2)+
   theme_bw()
   #theme(legend.position="none")
@@ -477,7 +477,7 @@ percentVar=round(100*summary(pca.object)$importance[2, PCAxy],0)
 
 
 pcaplot <- ggplot(pData(target_myData),
-       aes(x = PC1, y = PC2, color=genotype, shape = age_months, label=`Nuclei count`)) +
+       aes(x = PC1, y = PC2, color=region, shape = age_young_old, label=`genotype`)) +
   geom_point(size = 3) + geom_text(hjust=1.1, vjust=0.2)+
   xlab(paste0("PC", PCAx ,": ", percentVar[1], "% variance")) +
   ylab(paste0("PC", PCAy ,": ", percentVar[2], "% variance")) +
@@ -504,23 +504,23 @@ CV_dat <- assayDataApply(target_myData,
 sort(CV_dat, decreasing = TRUE)[1:50]
 
 # Identify genes in the top 3rd of the CV values
-GOI <- names(CV_dat)[CV_dat > quantile(CV_dat, 0.98)]
+GOI <- names(CV_dat)[CV_dat > quantile(CV_dat, 0.9949)]
 
 
 pheatmap(assayDataElement(target_myData[GOI, ], elt = "log_q"),
          scale = "row",
-         main="Heatmap of high CV (>0.98) genes",
-         show_rownames = F, show_colnames = FALSE,
+         main="Heatmap of high CV (>0.99) genes",
+         show_rownames = T, show_colnames = FALSE,
          border_color = NA,
-         clustering_method = "average",
+         clustering_method = "average", #"ward.D", "ward.D2", "single", "complete", "average", "mcquitty", "median","centroid"
          clustering_distance_rows = "correlation",
          clustering_distance_cols = "correlation",
          breaks = seq(-3, 3, 0.05),
          color = colorRampPalette(c("purple3", "black", "yellow2"))(120),
-         annotation_col = pData(target_myData)[, c("age_months", "region", "genotype", "class")],
+         annotation_col = pData(target_myData)[, c("age_young_old", "region", "genotype")],
          cutree_rows = 4,
-         cutree_cols = 4)
+         cutree_cols = 6)
 
 
-save(final, target_myData, neg_probes, file = "F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_1_3_2024.RData")
+save(final, target_myData, neg_probes, file = "F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_2_16_2024.RData")
 
