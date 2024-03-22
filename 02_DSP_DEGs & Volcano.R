@@ -38,12 +38,14 @@ library(Rtsne)
 
 #load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_12_21_2023.RData")
 #load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_1_3_2024.RData")
-load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_2_16_2024.RData")
+#load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_2_16_2024.RData")
+load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_3_14_2024.RData")
 
-pData(target_myData)$COMP5_age
+pData(target_myData)$COMP1
 
 # convert test variables to factors
-pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP5_age, c("PV/N_mucosa_<5 months", "N/N_mucosa_<5 months"))
+pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP1)
+#pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP5_age, c("PV/N_mucosa_<5 months", "N/N_mucosa_<5 months"))
 pData(target_myData)[["slide"]] <-  factor(pData(target_myData)[["MHL number"]])
 assayDataElement(object = target_myData, elt = "log_q") <- assayDataApply(target_myData, 2, FUN = log, base = 2, elt = "q_norm")
 
@@ -84,28 +86,47 @@ results$invert_P <- (-log10(results$`Pr(>|t|)`)) * sign(results$Estimate)
 #write <- dplyr::filter(results, FDR < 0.05 & abs(results$Estimate) > 0.5)
 #write.csv(write, "F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_1-3-24_withIntercept.csv")
 
+resultsEP <- dplyr::filter(results, Contrast == "epithelium_N/N - epithelium_PV/N")
+resultsST <- dplyr::filter(results, Contrast == "stroma_N/N - stroma_PV/N")
+
+write <- dplyr::filter(resultsST, FDR < 0.05 & abs(resultsST$Estimate) > 0.5)
+write.csv(write, "C:/Users/edmondsonef/Desktop/R-plots/Stroma_DEG_3-22-24_withIntercept.csv")
+
+results <- resultsEP
+
 top_g <- c()
-for(genotype in c("Full ROI", "PanCK pos")) {
-  ind <- results$Subset == status
-  top_g <- c(top_g,
-             results[ind, 'Gene'][
-               order(results[ind, 'invert_P'], decreasing = TRUE)[1:500]],
-             results[ind, 'Gene'][
-               order(results[ind, 'invert_P'], decreasing = FALSE)[1:500]])
-}
+top_g <- c(top_g,
+           results[, 'Gene'][order(results[,'invert_P'], decreasing= T)[1:40]],
+           results[, 'Gene'][order(results[,'invert_P'], decreasing= F)[1:40]])
 top_g <- unique(top_g)
 top_g
+
+features <- c("Slc2a3","Hyal1","Lbp","Nexmif","Il17rb","Sult1d1","Znhit6",
+              "Asph","Angptl7","St6galnac5","Pim3","Krt83","Gng12","Faim2",
+              "C3","Prap1","Pglyrp1","Ltf","Lcn2","Fcgbp","Cfb","Gjb2", "Aoc1",
+              "Trpv6", "Ppp1r1b","Egln3", "Lrp2", "Slc34a2","Arg1","Hdc","Cxcl5","Ccl2",
+              "Calb1","Csf3","Rnf186","Sgk1","Lrg1","Postn","Cxcl10",
+              "Thrsp","Ier3", "Hr", "Klf9", "Dio3", "Shh","Wnt11",
+              "Aldh1a1","Aldh1a3", "Adamtsl4","Htra1", "Epas1", "Fto", "Crmp1",
+              "Pfkfb3", "Gbp3", "Gar22", "Desi1", "Trp53inp2","Stat5a","Aldoc",
+              "Cxcl1","Il1a","Sprr2b","Spp1","Ppp1r1b","Icam1","Clca1","Iglc1",
+              "Cxcl15","Aspg","Muc4","Spink12","Il17rb","Cfb","Cyp2f2",
+              "Thra", "Thrab", "Il33","Wnt7a","Uox","Nppc","Cxcl2",
+              "Slc26a7","Ncoa7","Trim15","Spink1", "Apobec2","Galm",
+              "Agr2","Aldh1a3","Bcl3","Ccn3","Add2","Cyp21a1","Sprr2e","Pkdcc", "Wnt7a", "Thy1",
+              "Igha","Igkc","Ptn","Krt15","Chil1","Jchain","Krt5","Gas2l3","Krt14","Serpinb11","Aspg","Ctla2a",
+              "Col15a1", "Sprr2d", "Il36a", "Il1a", "Epcam", "Peg10", "Hoxa10", "Arg2")
 
 #reverse log fold change to fit with label
 results$Estimate1 <- results$Estimate*(-1)
 # Graph results
-volc_plot <- ggplot(results,                                                             ###CHANGE
+volc_plot <- ggplot(results,
        aes(x = Estimate1, y = -log10(`Pr(>|t|)`),
            color = Color, label = Gene)) +
   geom_vline(xintercept = c(0.5, -0.5), lty = "dashed") +
   geom_hline(yintercept = -log10(0.05), lty = "dashed") +
   geom_point() +
-  labs(x = " <- log2(FC) -> ",                                       ###CHANGE
+  labs(x = "N/N Epithelium <- log2(FC) -> PV/N Epithelium",
        y = "Significance, -log10(P)",
        color = "Significance") +
   scale_color_manual(values = c(`FDR < 0.001` = "dodgerblue", `FDR < 0.05` = "lightblue",
@@ -118,9 +139,16 @@ volc_plot <- ggplot(results,                                                    
                   max.overlaps = 50) +
   theme_bw(base_size = 15) +
   theme(legend.position = "bottom")
-  #facet_wrap(~Subset, scales = "free_y")
-
 volc_plot
+
+
+setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+tiff("DEG Epithelium.tiff", units="in", width=8, height=8, res=200)
+volc_plot
+dev.off()
+
+
+
 
 
 
@@ -139,20 +167,23 @@ library(gapminder)
 library(dplyr)
 library(RColorBrewer)
 
-myCol <- brewer.pal(4, "Pastel2")
 
 
-write <- dplyr::filter(results, FDR < 0.001 & abs(results$Estimate) > 0.5)
+
+write <- dplyr::filter(results, FDR < 0.05 & abs(results$Estimate) > 0.5)
 head(write)
-PVN_stroma <- dplyr::filter(write, Subset == "PV/N" & Estimate > 0.5)
-PVN_glands <- dplyr::filter(write, Subset == "PV/N" & Estimate < -0.5)
-NN_stroma <- dplyr::filter(write, Subset == "N/N" & Estimate > 0.5)
-NN_glands <- dplyr::filter(write, Subset == "N/N" & Estimate < -0.5)
+PVN_stroma <- dplyr::filter(write, Contrast == "stroma_N/N - stroma_PV/N" & Estimate < -0.5)
+PVN_glands <- dplyr::filter(write, Contrast  == "epithelium_N/N - epithelium_PV/N" & Estimate < -0.5)
+NN_stroma <- dplyr::filter(write, Contrast  == "stroma_N/N - stroma_PV/N" & Estimate > 0.5)
+NN_glands <- dplyr::filter(write, Contrast  == "epithelium_N/N - epithelium_PV/N" & Estimate > 0.5)
 
 gene_list <- list(PVN_glands = PVN_glands$Gene,
                   NN_glands = NN_glands$Gene,
                   PVN_stroma = PVN_stroma$Gene,
                   NN_stroma = NN_stroma$Gene)
+
+
+myCol <- brewer.pal(4, "Pastel2")
 VennDiagram <- venn.diagram(x = gene_list,
                             fill = myCol,
                             #cat.col = c("red", "green"),

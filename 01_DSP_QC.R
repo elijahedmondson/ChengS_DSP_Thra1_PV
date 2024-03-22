@@ -517,10 +517,10 @@ pheatmap(assayDataElement(target_myData[GOI, ], elt = "log_q"),
          clustering_distance_cols = "correlation",
          breaks = seq(-3, 3, 0.05),
          color = colorRampPalette(c("purple3", "black", "yellow2"))(120),
-         annotation_col = pData(target_myData)[, c("age_young_old", "region", "genotype")],
+         annotation_col = pData(target_myData)[, c("COMP1", "region", "genotype")],
          cutree_rows = 4,
          cutree_cols = 6)
 
 
-save(final, target_myData, neg_probes, file = "F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_2_16_2024.RData")
+save(final, target_myData, neg_probes, file = "F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_3_14_2024.RData")
 

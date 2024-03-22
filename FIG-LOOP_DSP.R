@@ -25,8 +25,8 @@ library(msigdbr)
 
 datadir <-"C:/Users/edmondsonef/Desktop/R-plots/"
 setwd(datadir)
-
-results <- read.csv("C:/Users/edmondsonef/Desktop/ChengS_DSP Results/DEG/Lists/DEG_1-3-24_withIntercept.csv")
+results <- read.csv("F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_3-14-24_with intercept.csv")
+#results <- read.csv("C:/Users/edmondsonef/Desktop/ChengS_DSP Results/DEG/Lists/DEG_1-3-24_withIntercept.csv")
 head(results)
 names(results)[2] <- 'SYMBOL'
 
@@ -44,13 +44,9 @@ mt_list = split(results, f = results$Contrast)
 names(mt_list)
 
 
-
-names(mt_list)
-
-
 ##FOR LOOP
 i = 12
-for(i in 8:15){
+for(i in 1:6){
   suffix <- names(mt_list[i])
   outname <-paste0(suffix, "_NEW_comps_MHL_with_int")
 

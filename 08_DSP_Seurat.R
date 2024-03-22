@@ -6,16 +6,13 @@ library(DESeq2)
 library(MAST)
 
 
-# #load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_12_21_2023.RData")
-# #load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_1_3_2024.RData")
-# load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_2_16_2024.RData")
+# load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_3_14_2024.RData")
 # assayDataElementNames(target_myData)
-#
 # mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm")
 # mySeurat
-# save(mySeurat, final, target_myData, as.Seurat.NanoStringGeoMxSet, file="F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat3.RData")
+# save(mySeurat, final, target_myData, as.Seurat.NanoStringGeoMxSet, file="F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat4.RData")
 
-load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat3.RData")
+load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat4.RData")
 
 # head(mySeurat, 3)
 # mySeurat@misc[1:8]
@@ -26,35 +23,22 @@ load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat3.RData")
 
 mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP1")
 VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
-mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1")
-VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
+# mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1_age")
+# VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
+# mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "log_q", ident = "COMP1_age")
+# VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
 
 
 
-
-mySeurat <- FindVariableFeatures(mySeurat, ident = "COMP5_age")
+mySeurat <- FindVariableFeatures(mySeurat, ident = "COMP1")
 top50 <- head(VariableFeatures(mySeurat), 100)
-LabelPoints(plot = plot1, points = top50, repel = T)
-
-features <- c("Egln3", "Lrp2", "Slc34a2","Arg1","Hdc","Cxcl5","Ccl2",
-              "Calb1","Csf3","Rnf186","Sgk1","Lrg1","Postn","Cxcl10",
-              "Thrsp","Ier3", "Hr", "Klf9", "Dio3", "Shh",
-              "Aldh1a1","Aldh1a3", "Adamtsl4","Htra1", "Epas1", "Fto", "Crmp1",
-              "Pfkfb3", "Gbp3", "Gar22", "Desi1", "Trp53inp2","Stat5a","Aldoc",
-              "Cxcl1","Il1a","Sprr2b","Spp1","Ppp1r1b","Icam1","Clca1","Iglc1",
-              "Cxcl15","Aspg","Muc4","Spink12","Il17rb","Cfb","Cyp2f2",
-              "Thra", "Thrab", "Il33","Wnt7a","Uox","Nppc","Cxcl2",
-              "Slc26a7","Ncoa7","Trim15","Spink1", "Apobec2","Galm",
-              "Agr2","Aldh1a3","Bcl3","Ccn3","Add2","Cyp21a1","Sprr2e","Pkdcc")
-LabelPoints(plot = plot1, points = features, repel = T)
-
 
 mySeurat <- ScaleData(mySeurat)
 
 mySeurat <- RunPCA(mySeurat, assay = "GeoMx", verbose = FALSE)
 #mySeurat <- RunPCA(mySeurat, features = VariableFeatures(object = mySeurat))
-print(mySeurat[["pca"]], dims = 1:2, nfeatures = 3)
-DimPlot(mySeurat, reduction = "pca", pt.size = 5, label = TRUE, group.by = "COMP5_age")
+print(mySeurat[["pca"]], dims = 1:2, nfeatures = 10)
+DimPlot(mySeurat, reduction = "pca", pt.size = 5, label = TRUE, group.by = "COMP1")
 
 
 mySeurat <- FindNeighbors(mySeurat, reduction = "pca", dims = seq_len(30))
@@ -62,34 +46,31 @@ mySeurat <- FindNeighbors(mySeurat, reduction = "pca", dims = seq_len(30))
 #mySeurat <- FindClusters(mySeurat, verbose = FALSE)
 
 mySeurat <- RunUMAP(mySeurat, reduction = "pca", dims = seq_len(30))
-DimPlot(mySeurat, reduction = "umap", pt.size = 5, label = TRUE, group.by = "COMP2")
+DimPlot(mySeurat, reduction = "umap", pt.size = 5, label = TRUE, group.by = "COMP1_age")
 
 
-levels(mySeurat)
-levels(x = mySeurat) <- c("PV/N_glands_<5 months",
-                          "PV/N_mucosa_<5 months",
-                          "PV/N_stroma_<5 months",
-                          "N/N_glands_<5 months",
-                          "N/N_mucosa_<5 months",
-                          "N/N_stroma_<5 months",
-                          "PV/N_glands_>5 months",
-                          "PV/N_mucosa_>5 months",
-                          "PV/N_stroma_>5 months",
-                          "N/N_glands_>5 months",
-                          "N/N_mucosa_>5 months",
-                          "N/N_stroma_>5 months")
+
+# mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP1_age")
+# mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1_age")
+mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "log_q", ident = "COMP1_age")
 
 
 
 levels(mySeurat)
+levels(x = mySeurat) <- c("epithelium_PV/N_<5 months",
+                          "epithelium_PV/N_5+ months",
+                          "stroma_PV/N_<5 months",
+                          "stroma_PV/N_5+ months",
+                          "epithelium_N/N_<5 months",
+                          "epithelium_N/N_5+ months",
+                          "stroma_N/N_<5 months",
+                          "stroma_N/N_5+ months")
 
-features <- c("Klf9", "Dio3","Hr", "Thy1", "Sult1d1", "Lrp2")
-features <- c("Klf4", "Prap1","Muc4", "Il33", "Agr2", "Wnt7a")
-
+features <- c("Klf9", "Lrp2", "Wnt11", "Hoxa10")
 fig <- RidgePlot(mySeurat, sort = F, features = features,
-                 idents = c("epithelium_PV/N",
-                            "epithelium_N/N"),
-                 ncol = 1)
+                 # idents = c("epithelium_N/N_<5 months","epithelium_PV/N_<5 months",
+                 #            "stroma_PV/N_<5 months","stroma_N/N_<5 months"),
+                 ncol = 2)
 fig
 
 
@@ -147,7 +128,7 @@ features <- c("Slc2a3","Hyal1","Lbp","Nexmif","Il17rb","Sult1d1","Znhit6",
               "C3","Prap1","Pglyrp1","Ltf","Lcn2","Fcgbp","Cfb","Gjb2", "Aoc1",
               "Trpv6", "Ppp1r1b","Egln3", "Lrp2", "Slc34a2","Arg1","Hdc","Cxcl5","Ccl2",
               "Calb1","Csf3","Rnf186","Sgk1","Lrg1","Postn","Cxcl10",
-              "Thrsp","Ier3", "Hr", "Klf9", "Dio3", "Shh",
+              "Thrsp","Ier3", "Hr", "Klf9", "Dio3", "Shh","Wnt11",
               "Aldh1a1","Aldh1a3", "Adamtsl4","Htra1", "Epas1", "Fto", "Crmp1",
               "Pfkfb3", "Gbp3", "Gar22", "Desi1", "Trp53inp2","Stat5a","Aldoc",
               "Cxcl1","Il1a","Sprr2b","Spp1","Ppp1r1b","Icam1","Clca1","Iglc1",
@@ -156,7 +137,7 @@ features <- c("Slc2a3","Hyal1","Lbp","Nexmif","Il17rb","Sult1d1","Znhit6",
               "Slc26a7","Ncoa7","Trim15","Spink1", "Apobec2","Galm",
               "Agr2","Aldh1a3","Bcl3","Ccn3","Add2","Cyp21a1","Sprr2e","Pkdcc", "Wnt7a", "Thy1",
               "Igha","Igkc","Ptn","Krt15","Chil1","Jchain","Krt5","Gas2l3","Krt14","Serpinb11","Aspg","Ctla2a",
-              "Col15a1", "Sprr2d")
+              "Col15a1", "Sprr2d", "Il36a", "Il1a", "Epcam", "Peg10", "Hoxa10")
 
 
 # Graph results
@@ -166,14 +147,14 @@ vplot <- ggplot(results,                                                        
   geom_vline(xintercept = c(0.5, -0.5), lty = "dashed") +
   geom_hline(yintercept = -log10(0.05), lty = "dashed") +
   geom_point() +
-  labs(x = "N/N <- log2(FC) -> PV/N",                                       ###CHANGE
+  labs(x = "N/N Uterine Stroma <- log2(FC) -> PV/N Uterine Stroma",                                       ###CHANGE
        y = "Significance, -log10(P)",
        color = "Significance") +
   scale_color_manual(values = c(`FDR < 0.001` = "dodgerblue", `FDR < 0.05` = "lightblue",
                                 `P < 0.05` = "orange2",`NS or FC < 0.5` = "gray"),
                      guide = guide_legend(override.aes = list(size = 4))) +
   scale_y_continuous(expand = expansion(mult = c(0,0.05))) +
-  geom_text_repel(data = subset(results, Gene %in% features & p_val < 0.05 & abs(avg_log2FC) >0.5),
+  geom_text_repel(data = subset(results, Gene %in% features & p_val_adj < 0.05 & abs(avg_log2FC) >0.5),
                   size = 4, point.padding = 0.15, color = "black",
                   min.segment.length = .1, box.padding = .2, lwd = 2,
                   max.overlaps = 50) +
@@ -182,13 +163,13 @@ vplot <- ggplot(results,                                                        
 vplot
 
 setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-tiff("fig.tiff", units="in", width=8, height=8, res=200)
+tiff("DEG Stroma.tiff", units="in", width=8, height=8, res=200)
 vplot
 dev.off()
 
 
-results <- dplyr::filter(results, p_val_adj < 0.05)
-write.csv(results, "F:/GeoMX KPC/Cheng_WTA1/processed_data/Seurat DEG/stroma.csv")
+results <- dplyr::filter(results, p_val_adj < 0.05 & abs(avg_log2FC) >0.5)
+write.csv(results, "C:/Users/edmondsonef/Desktop/R-plots/DEG Stroma.csv")
 
 
 
