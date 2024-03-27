@@ -44,7 +44,7 @@ load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_3_14_2024.RData")
 pData(target_myData)$COMP1
 
 # convert test variables to factors
-pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP1)
+pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP1_age)
 #pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP5_age, c("PV/N_mucosa_<5 months", "N/N_mucosa_<5 months"))
 pData(target_myData)[["slide"]] <-  factor(pData(target_myData)[["MHL number"]])
 assayDataElement(object = target_myData, elt = "log_q") <- assayDataApply(target_myData, 2, FUN = log, base = 2, elt = "q_norm")
@@ -55,8 +55,8 @@ for(status in c("Full ROI", "PanCK pos")) {
   ind <- pData(target_myData)$segment == status
   mixedOutmc <-
     mixedModelDE(target_myData[, ind], elt = "log_q",
-                 modelFormula = ~ testRegion + (1 + testRegion | slide), ##INTERCEPT: structures co-exist in a given tissue section
-                 #modelFormula = ~ testRegion + (1 | slide),
+                 #modelFormula = ~ testRegion + (1 + testRegion | slide), ##INTERCEPT: structures co-exist in a given tissue section
+                 modelFormula = ~ testRegion + (1 | slide),
                  groupVar = "testRegion",
                  nCores = parallel::detectCores(),
                  multiCore = FALSE)
@@ -86,13 +86,20 @@ results$invert_P <- (-log10(results$`Pr(>|t|)`)) * sign(results$Estimate)
 #write <- dplyr::filter(results, FDR < 0.05 & abs(results$Estimate) > 0.5)
 #write.csv(write, "F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_1-3-24_withIntercept.csv")
 
-resultsEP <- dplyr::filter(results, Contrast == "epithelium_N/N - epithelium_PV/N")
-resultsST <- dplyr::filter(results, Contrast == "stroma_N/N - stroma_PV/N")
+resultsEPyoung <- dplyr::filter(results, Contrast == "epithelium_N/N_<5 months - epithelium_PV/N_<5 months")
+resultsEPold <- dplyr::filter(results, Contrast == "epithelium_N/N_5+ months - epithelium_PV/N_5+ months")
+resultsSTyoung <- dplyr::filter(results, Contrast == "stroma_N/N_<5 months - stroma_PV/N_<5 months")
+resultsSTold <- dplyr::filter(results, Contrast == "stroma_N/N_5+ months - stroma_PV/N_5+ months")
 
-write <- dplyr::filter(resultsST, FDR < 0.05 & abs(resultsST$Estimate) > 0.5)
-write.csv(write, "C:/Users/edmondsonef/Desktop/R-plots/Stroma_DEG_3-22-24_withIntercept.csv")
+write <- dplyr::filter(resultsSTold, FDR < 0.05 & abs(resultsSTold$Estimate) > 0.5)
+write.csv(write, "C:/Users/edmondsonef/Desktop/R-plots/Stroma_old_DEG_3-25-24_noIntercept.csv")
 
-results <- resultsEP
+
+
+
+
+
+results <- resultsSTold
 
 top_g <- c()
 top_g <- c(top_g,
@@ -115,7 +122,7 @@ features <- c("Slc2a3","Hyal1","Lbp","Nexmif","Il17rb","Sult1d1","Znhit6",
               "Slc26a7","Ncoa7","Trim15","Spink1", "Apobec2","Galm",
               "Agr2","Aldh1a3","Bcl3","Ccn3","Add2","Cyp21a1","Sprr2e","Pkdcc", "Wnt7a", "Thy1",
               "Igha","Igkc","Ptn","Krt15","Chil1","Jchain","Krt5","Gas2l3","Krt14","Serpinb11","Aspg","Ctla2a",
-              "Col15a1", "Sprr2d", "Il36a", "Il1a", "Epcam", "Peg10", "Hoxa10", "Arg2")
+              "Col15a1", "Sprr2d", "Il36a", "Il1a", "Epcam", "Peg10", "Hoxa10", "Arg2", "Wnt2b")
 
 #reverse log fold change to fit with label
 results$Estimate1 <- results$Estimate*(-1)
@@ -143,7 +150,7 @@ volc_plot
 
 
 setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-tiff("DEG Epithelium.tiff", units="in", width=8, height=8, res=200)
+tiff("DEG Stroma Old.tiff", units="in", width=8, height=8, res=200)
 volc_plot
 dev.off()
 
