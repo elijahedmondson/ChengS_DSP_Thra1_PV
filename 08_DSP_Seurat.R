@@ -50,9 +50,11 @@ DimPlot(mySeurat, reduction = "umap", pt.size = 5, label = TRUE, group.by = "COM
 
 
 
-# mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP1_age")
-# mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1_age")
-mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "log_q", ident = "COMP1_age")
+mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP1_age")
+#mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1_age")
+#mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "log_q", ident = "COMP1_age")
+#mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "neg_norm", ident = "COMP1_age")
+
 
 
 
@@ -65,17 +67,25 @@ levels(x = mySeurat) <- c("epithelium_PV/N_<5 months",
                           "epithelium_N/N_5+ months",
                           "stroma_N/N_<5 months",
                           "stroma_N/N_5+ months")
+# levels(mySeurat)
+# levels(x = mySeurat) <- c("epithelium_PV/N",
+#                           "epithelium_N/N",
+#                           "stroma_PV/N",
+#                           "stroma_N/N")
 
-features <- c("Klf9", "Lrp2", "Wnt11", "Hoxa10")
+
+features <- c("Hr","Dio3","Klf9","Wnt11","Lrp2","Thy1","Ccnd1","Hoxa10")
 fig <- RidgePlot(mySeurat, sort = F, features = features,
-                 # idents = c("epithelium_N/N_<5 months","epithelium_PV/N_<5 months",
-                 #            "stroma_PV/N_<5 months","stroma_N/N_<5 months"),
-                 ncol = 2)
+                 #idents = c("epithelium_N/N_<5 months","epithelium_PV/N_<5 months"),
+                 idents = c("stroma_N/N_<5 months","stroma_PV/N_<5 months"),
+                 #idents = c("epithelium_PV/N_5+ months","epithelium_N/N_5+ months"),
+                 #idents = c("stroma_N/N_5+ months","stroma_PV/N_5+ months"),
+                 ncol = 1)
 fig
 
 
 setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-tiff("fig.tiff", units="in", width=20, height=15, res=300)
+tiff("fig.tiff", units="in", width=8, height=15, res=300)
 fig
 dev.off()
 
@@ -174,6 +184,14 @@ write.csv(results, "C:/Users/edmondsonef/Desktop/R-plots/DEG Stroma.csv")
 
 
 
+########## FindAllMarkers()
+########## FindAllMarkers()
+########## FindAllMarkers()
+
+mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP1_age")
+#mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1_age")
+#mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "log_q", ident = "COMP1_age")
+#mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "neg_norm", ident = "COMP1_age")
 
 
 
@@ -193,10 +211,14 @@ DefaultAssay(mySeurat) <- 'integrated'
 S2 <- ScaleData(mySeurat, features=rownames(mySeurat))
 DefaultAssay(S2) <- 'integrated'
 
-idents.1 <- WhichCells(S2, idents = c("epithelium_PV/N",
-                                      "stroma_PV/N",
-                                      "epithelium_N/N",
-                                      "stroma_N/N"))
+idents.1 <- WhichCells(S2, idents = c("epithelium_PV/N_<5 months",
+                                      "epithelium_PV/N_5+ months",
+                                      "stroma_PV/N_<5 months",
+                                      "stroma_PV/N_5+ months",
+                                      "epithelium_N/N_<5 months",
+                                      "epithelium_N/N_5+ months",
+                                      "stroma_N/N_<5 months",
+                                      "stroma_N/N_5+ months"))
 
 idents.2 <- WhichCells(S2, idents = c("PV/N_glands_5-6months",
                                       "PV/N_mucosa_5-6months",
@@ -210,7 +232,7 @@ idents.2 <- WhichCells(S2, idents = c("PV/N_glands_5-6months",
 hm1 <- DoHeatmap(S2, cells = idents.1)
 hm2 <- DoHeatmap(S2, cells = cells.2)
 
-fig <- DoHeatmap(object = S2, cells = idents.1, features = top10, group.by = "COMP1", group.bar = TRUE, group.colors = NULL,
+fig <- DoHeatmap(object = S2, cells = idents.1, features = top10, group.by = "COMP1_age", group.bar = TRUE, group.colors = NULL,
                  disp.min = -2.5, disp.max = NULL, slot = "scale.data", assay = NULL, label = T,
                  size = 5.5, hjust = 0, angle = 45, raster = TRUE, draw.lines = TRUE, lines.width = NULL,
                  group.bar.height = 0.02, combine = TRUE)
