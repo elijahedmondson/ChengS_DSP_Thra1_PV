@@ -36,22 +36,19 @@ library(cowplot)
 library(umap)
 library(Rtsne)
 
-#load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_12_21_2023.RData")
-#load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_1_3_2024.RData")
-#load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_2_16_2024.RData")
-load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_3_14_2024.RData")
 
+load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_3_14_2024.RData")
 pData(target_myData)$COMP1
 
 # convert test variables to factors
-pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP1_age)
-#pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP5_age, c("PV/N_mucosa_<5 months", "N/N_mucosa_<5 months"))
+#pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP1)
+pData(target_myData)$testRegion <- factor(pData(target_myData)$COMP1, c("epithelium_N/N","epithelium_PV/N"))
 pData(target_myData)[["slide"]] <-  factor(pData(target_myData)[["MHL number"]])
 assayDataElement(object = target_myData, elt = "log_q") <- assayDataApply(target_myData, 2, FUN = log, base = 2, elt = "q_norm")
 
 # run LMM:
 results <- c()
-for(status in c("Full ROI", "PanCK pos")) {
+for(status in c("Full ROI","PanCK pos")) {
   ind <- pData(target_myData)$segment == status
   mixedOutmc <-
     mixedModelDE(target_myData[, ind], elt = "log_q",
@@ -83,23 +80,21 @@ dplyr::count(results, FDR < 0.05)
 dplyr::count(results, `Pr(>|t|)` < 0.05)
 results$invert_P <- (-log10(results$`Pr(>|t|)`)) * sign(results$Estimate)
 
-#write <- dplyr::filter(results, FDR < 0.05 & abs(results$Estimate) > 0.5)
-#write.csv(write, "F:/GeoMX KPC/Cheng_WTA1/processed_data/DEG_1-3-24_withIntercept.csv")
-
-resultsEPyoung <- dplyr::filter(results, Contrast == "epithelium_N/N_<5 months - epithelium_PV/N_<5 months")
-resultsEPold <- dplyr::filter(results, Contrast == "epithelium_N/N_5+ months - epithelium_PV/N_5+ months")
-resultsSTyoung <- dplyr::filter(results, Contrast == "stroma_N/N_<5 months - stroma_PV/N_<5 months")
-resultsSTold <- dplyr::filter(results, Contrast == "stroma_N/N_5+ months - stroma_PV/N_5+ months")
-
-write <- dplyr::filter(resultsSTold, FDR < 0.05 & abs(resultsSTold$Estimate) > 0.5)
-write.csv(write, "C:/Users/edmondsonef/Desktop/R-plots/Stroma_old_DEG_3-25-24_noIntercept.csv")
-
-
-
-
-
-
-results <- resultsSTold
+# write <- dplyr::filter(results, FDR < 0.05 & abs(results$Estimate) > 0.5 & Contrast == "epithelium_N/N - epithelium_PV/N")
+# write.csv(write, "C:/Users/edmondsonef/Desktop/DEG_epi_3-29-24_noIntercept.csv")
+# write <- dplyr::filter(results, FDR < 0.05 & abs(results$Estimate) > 0.5 & Contrast == "stroma_N/N - stroma_PV/N")
+# write.csv(write, "C:/Users/edmondsonef/Desktop/DEG_str_3-29-24_noIntercept.csv")
+#
+# resultsEPyoung <- dplyr::filter(results, Contrast == "epithelium_N/N_<5 months - epithelium_PV/N_<5 months")
+# resultsEPold <- dplyr::filter(results, Contrast == "epithelium_N/N_5+ months - epithelium_PV/N_5+ months")
+# resultsSTyoung <- dplyr::filter(results, Contrast == "stroma_N/N_<5 months - stroma_PV/N_<5 months")
+# resultsSTold <- dplyr::filter(results, Contrast == "stroma_N/N_5+ months - stroma_PV/N_5+ months")
+#
+#
+# resultsEP <- dplyr::filter(results, Contrast == "epithelium_N/N - epithelium_PV/N")
+# resultsST <- dplyr::filter(results, Contrast == "stroma_N/N - stroma_PV/N")
+#
+# results <- resultsST
 
 top_g <- c()
 top_g <- c(top_g,
@@ -119,10 +114,10 @@ features <- c("Slc2a3","Hyal1","Lbp","Nexmif","Il17rb","Sult1d1","Znhit6",
               "Cxcl1","Il1a","Sprr2b","Spp1","Ppp1r1b","Icam1","Clca1","Iglc1",
               "Cxcl15","Aspg","Muc4","Spink12","Il17rb","Cfb","Cyp2f2",
               "Thra", "Thrab", "Il33","Wnt7a","Uox","Nppc","Cxcl2",
-              "Slc26a7","Ncoa7","Trim15","Spink1", "Apobec2","Galm",
+              "Slc26a7","Ncoa7","Trim15","Spink1", "Apobec2","Galm","Cdkn1a",
               "Agr2","Aldh1a3","Bcl3","Ccn3","Add2","Cyp21a1","Sprr2e","Pkdcc", "Wnt7a", "Thy1",
-              "Igha","Igkc","Ptn","Krt15","Chil1","Jchain","Krt5","Gas2l3","Krt14","Serpinb11","Aspg","Ctla2a",
-              "Col15a1", "Sprr2d", "Il36a", "Il1a", "Epcam", "Peg10", "Hoxa10", "Arg2", "Wnt2b")
+              "Igha","Igkc","Ptn","Krt15","Jchain","Krt5","Gas2l3","Krt14","Serpinb11","Aspg","Ctla2a",
+              "Col15a1", "Sprr2d", "Il36a", "Il1a", "Epcam", "Peg10", "Hoxa10", "Arg2", "Wnt2b", "Msx2")
 
 #reverse log fold change to fit with label
 results$Estimate1 <- results$Estimate*(-1)
@@ -133,14 +128,14 @@ volc_plot <- ggplot(results,
   geom_vline(xintercept = c(0.5, -0.5), lty = "dashed") +
   geom_hline(yintercept = -log10(0.05), lty = "dashed") +
   geom_point() +
-  labs(x = "N/N Epithelium <- log2(FC) -> PV/N Epithelium",
+  labs(x = "N/N <- log2(FC) -> PV/N",
        y = "Significance, -log10(P)",
        color = "Significance") +
   scale_color_manual(values = c(`FDR < 0.001` = "dodgerblue", `FDR < 0.05` = "lightblue",
                                 `P < 0.05` = "orange2",`NS or FC < 0.5` = "gray"),
                      guide = guide_legend(override.aes = list(size = 4))) +
   scale_y_continuous(expand = expansion(mult = c(0,0.05))) +
-  geom_text_repel(data = subset(results, Gene %in% top_g & FDR < 0.05 & abs(results$Estimate1) > 0.5),
+  geom_text_repel(data = subset(results, Gene %in% features & FDR < 0.05 & abs(results$Estimate1) > 0.5),
                   size = 6, point.padding = 0.15, color = "black",
                   min.segment.length = .1, box.padding = .2, #lwd = 2,
                   max.overlaps = 50) +
@@ -150,7 +145,7 @@ volc_plot
 
 
 setwd("C:/Users/edmondsonef/Desktop/R-plots/")
-tiff("DEG Stroma Old.tiff", units="in", width=8, height=8, res=200)
+tiff("DEG Str.tiff", units="in", width=8, height=8, res=200)
 volc_plot
 dev.off()
 

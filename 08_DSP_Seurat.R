@@ -51,7 +51,7 @@ DimPlot(mySeurat, reduction = "umap", pt.size = 5, label = TRUE, group.by = "COM
 
 
 mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP1_age")
-#mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1_age")
+mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1_age")
 #mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "log_q", ident = "COMP1_age")
 #mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "neg_norm", ident = "COMP1_age")
 
@@ -67,17 +67,20 @@ levels(x = mySeurat) <- c("epithelium_PV/N_<5 months",
                           "epithelium_N/N_5+ months",
                           "stroma_N/N_<5 months",
                           "stroma_N/N_5+ months")
-# levels(mySeurat)
-# levels(x = mySeurat) <- c("epithelium_PV/N",
-#                           "epithelium_N/N",
-#                           "stroma_PV/N",
-#                           "stroma_N/N")
+levels(mySeurat)
+levels(x = mySeurat) <- c("epithelium_PV/N",
+                          "epithelium_N/N",
+                          "stroma_PV/N",
+                          "stroma_N/N")
 
+features <- c("Tnf", "Wnt4", "Wnt7a", "Wnt5a")
+features <- c("Hr","Dio3","Klf9","Wnt11","Lrp2","Thy1","Ccnd1","Hoxa10", "Msx2")
 
-features <- c("Hr","Dio3","Klf9","Wnt11","Lrp2","Thy1","Ccnd1","Hoxa10")
+features <- c("Klf9","Wnt11","Lrp2","Thy1","Ccnd1","Hoxa10", "Il33")
 fig <- RidgePlot(mySeurat, sort = F, features = features,
+                 #idents = c("epithelium_PV/N", "epithelium_N/N"),
                  #idents = c("epithelium_N/N_<5 months","epithelium_PV/N_<5 months"),
-                 idents = c("stroma_N/N_<5 months","stroma_PV/N_<5 months"),
+                 #idents = c("stroma_N/N_<5 months","stroma_PV/N_<5 months"),
                  #idents = c("epithelium_PV/N_5+ months","epithelium_N/N_5+ months"),
                  #idents = c("stroma_N/N_5+ months","stroma_PV/N_5+ months"),
                  ncol = 1)
@@ -104,7 +107,7 @@ dev.off()
 
 #NormlizeData() before "FindMarkers()
 levels(mySeurat)
-de_markers <- FindMarkers(mySeurat, ident.1 = "stroma_PV/N", ident.2 = "stroma_N/N",test.use = "negbinom")
+de_markers <- FindMarkers(mySeurat, ident.1 = "epithelium_PV/N", ident.2 = "epithelium_N/N",test.use = "negbinom")
 
 
 results <- de_markers
@@ -188,9 +191,14 @@ write.csv(results, "C:/Users/edmondsonef/Desktop/R-plots/DEG Stroma.csv")
 ########## FindAllMarkers()
 ########## FindAllMarkers()
 
-mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP1_age")
-#mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1_age")
-#mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "log_q", ident = "COMP1_age")
+
+
+load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat4.RData")
+
+
+#mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP1")
+mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1")
+#mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "log_q", ident = "COMP1")
 #mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "neg_norm", ident = "COMP1_age")
 
 
@@ -203,8 +211,17 @@ library(dplyr)
 
 DEG_all <- de_ALLmarkers %>%
   group_by(cluster) %>%
-  dplyr::filter(avg_log2FC > 1)
-write.csv(DEG_all,"C:/Users/edmondsonef/Desktop/de_ALLmarkers.csv")
+  dplyr::filter(p_val_adj < 0.05 & abs(avg_log2FC) >1)
+write.csv(DEG_all,"C:/Users/edmondsonef/Desktop/de_ALLmarkers_exprs.csv")
+
+
+
+
+
+
+
+
+
 
 top10 <- DEG_all %>% group_by(cluster) %>% dplyr::top_n(20, avg_log2FC)
 DefaultAssay(mySeurat) <- 'integrated'
@@ -226,9 +243,8 @@ idents.2 <- WhichCells(S2, idents = c("PV/N_glands_5-6months",
                                       "N/N_glands_5-6months",
                                       "N/N_mucosa_5-6months",
                                       "N/N_stroma_5-6months"))
-#"N/N_glands_5-6months",
-#"N/N_mucosa_5-6months",
-#"N/N_stroma_5-6months"))
+
+
 hm1 <- DoHeatmap(S2, cells = idents.1)
 hm2 <- DoHeatmap(S2, cells = cells.2)
 
