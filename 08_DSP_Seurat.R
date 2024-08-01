@@ -21,7 +21,7 @@ load("F:/GeoMX KPC/Cheng_WTA1/processed_data/Cheng_WTA1_seurat4.RData")
 # head(mySeurat@assays$GeoMx@meta.features) # gene metadata
 # VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
 
-mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP1")
+mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "q_norm", ident = "COMP1_age")
 VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
 # mySeurat <- as.Seurat.NanoStringGeoMxSet(target_myData, normData = "exprs", ident = "COMP1_age")
 # VlnPlot(mySeurat, features = "nCount_GeoMx", pt.size = 5)
@@ -107,7 +107,7 @@ dev.off()
 
 #NormlizeData() before "FindMarkers()
 levels(mySeurat)
-de_markers <- FindMarkers(mySeurat, ident.1 = "epithelium_PV/N", ident.2 = "epithelium_N/N",test.use = "negbinom")
+de_markers <- FindMarkers(mySeurat, ident.1 = "stroma_PV/N_5+ months", ident.2 = "stroma_N/N_5+ months",test.use = "negbinom")
 
 
 results <- de_markers
@@ -151,7 +151,7 @@ features <- c("Slc2a3","Hyal1","Lbp","Nexmif","Il17rb","Sult1d1","Znhit6",
               "Agr2","Aldh1a3","Bcl3","Ccn3","Add2","Cyp21a1","Sprr2e","Pkdcc", "Wnt7a", "Thy1",
               "Igha","Igkc","Ptn","Krt15","Chil1","Jchain","Krt5","Gas2l3","Krt14","Serpinb11","Aspg","Ctla2a",
               "Col15a1", "Sprr2d", "Il36a", "Il1a", "Epcam", "Peg10", "Hoxa10")
-
+features <- c("Il33","Klf9")
 
 # Graph results
 vplot <- ggplot(results,                                                             ###CHANGE
@@ -160,19 +160,23 @@ vplot <- ggplot(results,                                                        
   geom_vline(xintercept = c(0.5, -0.5), lty = "dashed") +
   geom_hline(yintercept = -log10(0.05), lty = "dashed") +
   geom_point() +
-  labs(x = "N/N Uterine Stroma <- log2(FC) -> PV/N Uterine Stroma",                                       ###CHANGE
+  labs(x = "WT   <-- log2(FC) -->   Thra1PV/+",
        y = "Significance, -log10(P)",
-       color = "Significance") +
-  scale_color_manual(values = c(`FDR < 0.001` = "dodgerblue", `FDR < 0.05` = "lightblue",
-                                `P < 0.05` = "orange2",`NS or FC < 0.5` = "gray"),
-                     guide = guide_legend(override.aes = list(size = 4))) +
+       color = "Significance",
+       title = "Uterus: Endometrial Stroma (>5 months)") +
+  scale_color_manual(values = c(`FDR < 0.001` = "dodgerblue", `FDR < 0.05` = "orange",
+                                `P < 0.05` = "lightgray",`NS or FC < 0.5` = "gray"),
+                     guide = guide_legend(override.aes = list(size = 2))) +
   scale_y_continuous(expand = expansion(mult = c(0,0.05))) +
+  #scale_y_continuous(limits = c(0,38)) +
   geom_text_repel(data = subset(results, Gene %in% features & p_val_adj < 0.05 & abs(avg_log2FC) >0.5),
-                  size = 4, point.padding = 0.15, color = "black",
-                  min.segment.length = .1, box.padding = .2, lwd = 2,
+                  size = 8, point.padding = 0.15, color = "black", nudge_x = -.3, nudge_y = -1,
+                  min.segment.length = .1, box.padding = .5,
                   max.overlaps = 50) +
   theme_bw(base_size = 16) +
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        plot.title = element_text(size = 20, face = "bold"))# move caption to the left
+
 vplot
 
 setwd("C:/Users/edmondsonef/Desktop/R-plots/")
@@ -277,11 +281,32 @@ VizDimLoadings(mySeurat, dims = 1:5, reduction = "pca")
 mySeurat <- FindVariableFeatures(mySeurat, selection.method = "vst", nfeatures = 2000)
 
 # Identify the 10 most highly variable genes
-top10 <- head(VariableFeatures(mySeurat), 10)
+features <- head(VariableFeatures(mySeurat), 300)
+
+
+features <- c(#"Slc2a3","Hyal1","Lbp","Nexmif","Il17rb","Sult1d1","Znhit6",
+              #"Asph","Angptl7","St6galnac5","Pim3","Krt83","Gng12","Faim2",
+              #"C3","Prap1","Pglyrp1","Ltf","Lcn2","Fcgbp","Cfb","Gjb2", "Aoc1",
+              #"Trpv6", "Ppp1r1b","Egln3","Slc34a2","Hdc",
+              #"Arg1","Cxcl5","Ccl2","Cxcl10","Cxcl2","Cxcl15","Cxcl1",
+              #"Calb1","Csf3","Rnf186","Sgk1","Lrg1","Postn",
+              "Thrsp",  "Klf9", "Wnt11",#"Tnf","Il1a","Lrp2","Ier3","Dio3", "Shh","Hr",
+              #"Aldh1a1","Aldh1a3", "Adamtsl4","Htra1", "Epas1", "Fto", "Crmp1",
+              #"Pfkfb3", "Gbp3", "Gar22", "Desi1", "Trp53inp2","Stat5a","Aldoc", "Epcam", "Peg10","Ptn","Krt15","Chil1",
+              #"Sprr2b","Spp1","Ppp1r1b","Icam1","Clca1","Iglc1",
+              #"Aspg","Muc4","Spink12","Il17rb","Cfb","Cyp2f2","Krt5","Gas2l3","Krt14","Serpinb11","Col15a1", "Sprr2d",
+              "Thra", "Thrab", "Il33",#"Uox","Nppc","Il36a","Agr2","Igha","Igkc","Jchain","Ctla2a",
+              #"Slc26a7","Ncoa7","Trim15","Spink1", "Apobec2","Galm","Aldh1a3","Bcl3","Ccn3","Add2","Cyp21a1","Sprr2e","Pkdcc",
+               "Wnt7a", "Thy1", "Hoxa10", "Lrp2")
+plot2 <- LabelPoints(plot = plot1, points = features, repel = F)
+setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+tiff("fig.tiff", units="in", width=7, height=5, res=300)
+plot2
+dev.off()
 
 # plot variable features with and without labels
 plot1 <- VariableFeaturePlot(mySeurat)
-plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot2 <- LabelPoints(plot = plot1, points = features, repel = TRUE)
 plot1 + plot2
 
 

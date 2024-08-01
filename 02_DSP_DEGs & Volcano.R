@@ -52,8 +52,8 @@ for(status in c("Full ROI","PanCK pos")) {
   ind <- pData(target_myData)$segment == status
   mixedOutmc <-
     mixedModelDE(target_myData[, ind], elt = "log_q",
-                 #modelFormula = ~ testRegion + (1 + testRegion | slide), ##INTERCEPT: structures co-exist in a given tissue section
-                 modelFormula = ~ testRegion + (1 | slide),
+                 modelFormula = ~ testRegion + (1 + testRegion | slide), ##INTERCEPT: structures co-exist in a given tissue section
+                 #modelFormula = ~ testRegion + (1 | slide),
                  groupVar = "testRegion",
                  nCores = parallel::detectCores(),
                  multiCore = FALSE)
@@ -118,7 +118,7 @@ features <- c("Slc2a3","Hyal1","Lbp","Nexmif","Il17rb","Sult1d1","Znhit6",
               "Agr2","Aldh1a3","Bcl3","Ccn3","Add2","Cyp21a1","Sprr2e","Pkdcc", "Wnt7a", "Thy1",
               "Igha","Igkc","Ptn","Krt15","Jchain","Krt5","Gas2l3","Krt14","Serpinb11","Aspg","Ctla2a",
               "Col15a1", "Sprr2d", "Il36a", "Il1a", "Epcam", "Peg10", "Hoxa10", "Arg2", "Wnt2b", "Msx2")
-
+features <- c("Klf9","Il33")
 #reverse log fold change to fit with label
 results$Estimate1 <- results$Estimate*(-1)
 # Graph results

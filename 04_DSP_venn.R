@@ -14,17 +14,12 @@ library(dplyr)
 # universe <- read.csv("C:/Users/edmondsonef/Desktop/ChengS_DSP Results/DEG/DEG_universe.csv")
 # universe <- dplyr::select(universe,SYMBOL,ENTREZID)
 # head(universe)
-ALLepi <- read_excel("C:/Users/edmondsonef/Desktop/Cheng DEG list.xlsx", sheet = "All Epithelium")
-Allstr <- read_excel("C:/Users/edmondsonef/Desktop/Cheng DEG list.xlsx", sheet = "All Stroma")
-YOUNGepi <- read_excel("C:/Users/edmondsonef/Desktop/Cheng DEG list.xlsx", sheet = "Epithelium <5mo")
-OLDepi <- read_excel("C:/Users/edmondsonef/Desktop/Cheng DEG list.xlsx", sheet = "Epithelium >5mo")
-YOUNGstroma <- read_excel("C:/Users/edmondsonef/Desktop/Cheng DEG list.xlsx", sheet = "Stroma <5mo")
-OLDstroma <- read_excel("C:/Users/edmondsonef/Desktop/Cheng DEG list.xlsx", sheet = "Stroma >5mo")
-
-ALLepi_up <- ALLepi %>%  dplyr::filter(avg_log2FC >0)
-ALLepi_down <- ALLepi %>%  dplyr::filter(avg_log2FC <0)
-Allstr_up <- Allstr %>%  dplyr::filter(avg_log2FC >0)
-Allstr_down <- Allstr %>%  dplyr::filter(avg_log2FC <0)
+ALLepi <- read_excel("C:/Users/edmondsonef/Desktop/KLF9 manuscript/Supp. Table 1, DEG list.xlsx", sheet = "All Epithelium")
+Allstr <- read_excel("C:/Users/edmondsonef/Desktop/KLF9 manuscript/Supp. Table 1, DEG list.xlsx", sheet = "All Stroma")
+YOUNGepi <- read_excel("C:/Users/edmondsonef/Desktop/KLF9 manuscript/Supp. Table 1, DEG list.xlsx", sheet = "Epithelium <5mo")
+OLDepi <- read_excel("C:/Users/edmondsonef/Desktop/KLF9 manuscript/Supp. Table 1, DEG list.xlsx", sheet = "Epithelium >5mo")
+YOUNGstroma <- read_excel("C:/Users/edmondsonef/Desktop/KLF9 manuscript/Supp. Table 1, DEG list.xlsx", sheet = "Stroma <5mo")
+OLDstroma <- read_excel("C:/Users/edmondsonef/Desktop/KLF9 manuscript/Supp. Table 1, DEG list.xlsx", sheet = "Stroma >5mo")
 
 gene_list <- list(Epithelium = ALLepi$Gene,
                   Stroma = Allstr$Gene)
@@ -34,6 +29,46 @@ VennDiagram <- venn.diagram(x = gene_list, filename = NULL,
                             cex = 4,lty = "blank",
                             cat.cex = 2)
 cowplot::plot_grid(VennDiagram)
+
+
+t=get.venn.partitions(gene_list, keep.elements = T, force.unique = T)
+
+
+ALLepi_WT <- ALLepi %>%  dplyr::filter(avg_log2FC >0)
+ALLepi_PV <- ALLepi %>%  dplyr::filter(avg_log2FC <0)
+Allstr_WT <- Allstr %>%  dplyr::filter(avg_log2FC >0)
+Allstr_PV <- Allstr %>%  dplyr::filter(avg_log2FC <0)
+
+gene_list <- list(WT_Epithelium = ALLepi_WT$Gene,
+                  WT_Stroma = Allstr_WT$Gene,
+                  PV_Epithelium = ALLepi_PV$Gene,
+                  PV_Stroma = Allstr_PV$Gene)
+VennDiagram <- venn.diagram(x = gene_list, filename = NULL,
+                            fill = c("blue", "red","green","yellow"),
+                            cat.col = c("blue", "red","green","yellow"),
+                            cex = 2,lty = "blank",
+                            cat.cex = 1.5)
+cowplot::plot_grid(VennDiagram)
+
+gene_list <- list(#WT_Epithelium = ALLepi_WT$Gene,
+                  WT_Stroma = Allstr_WT$Gene,
+                  #PV_Epithelium = ALLepi_PV$Gene)#,
+                  PV_Stroma = Allstr_PV$Gene)
+VennDiagram <- venn.diagram(x = gene_list, filename = NULL,
+                            fill = c("blue", "red"),
+                            cat.col = c("blue", "red"),
+                            cex = 4,lty = "blank",
+                            cat.cex = 2)
+cowplot::plot_grid(VennDiagram)
+
+setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+tiff("Plot.tiff", units="in", width=10, height=10, res=200)
+cowplot::plot_grid(VennDiagram)
+dev.off()
+
+
+
+
 
 gene_list <- list(All = Allstr$Gene,
                   Young = YOUNGstroma$Gene,
@@ -64,6 +99,11 @@ VennDiagram <- venn.diagram(x = gene_list, filename = NULL,output=F,
                             cat.cex = 2)
 cowplot::plot_grid(VennDiagram)
 
+setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+tiff("Plot.tiff", units="in", width=10, height=10, res=200)
+cowplot::plot_grid(VennDiagram)
+dev.off()
+
 
 
 ALLepi_up <- ALLepi %>%  dplyr::filter(avg_log2FC >0)
@@ -71,16 +111,22 @@ ALLepi_down <- ALLepi %>%  dplyr::filter(avg_log2FC <0)
 Allstr_up <- Allstr %>%  dplyr::filter(avg_log2FC >0)
 Allstr_down <- Allstr %>%  dplyr::filter(avg_log2FC <0)
 
-gene_list <- list(Epithelium_WT = ALLepi_up$Gene,
-                  Epithelium_PV = ALLepi_down$Gene,
-                  Stroma_WT = Allstr_up$Gene,
-                  Stroma_PV = Allstr_down$Gene)
+gene_list <- list(WT_Epi = ALLepi_up$Gene,
+                  PV_Epi = ALLepi_down$Gene,
+                  WT_Str = Allstr_up$Gene,
+                  PV_Str = Allstr_down$Gene)
 VennDiagram <- venn.diagram(x = gene_list, filename = NULL,
                             fill = c("blue", "red", "green", "yellow"),
                             cat.col = c("blue", "red", "green", "yellow"),
                             cex = 2,lty = "blank",
                             cat.cex = 2)
 cowplot::plot_grid(VennDiagram)
+
+setwd("C:/Users/edmondsonef/Desktop/R-plots/")
+tiff("Plot.tiff", units="in", width=10, height=10, res=200)
+cowplot::plot_grid(VennDiagram)
+dev.off()
+
 
 
 write <- dplyr::full_join(MMstr, SEURstr, by = "Gene")
