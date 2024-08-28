@@ -9,7 +9,7 @@ getwd()
 
 
 
-DCCFiles <- list.files("C:/Users/edmondsonef/Desktop/GEO/processed_data/", full.names=TRUE)
+DCCFiles <- list.files("C:/Users/edmondsonef/Desktop/GEO/fastq/", full.names=TRUE)
 
 ## compute check sum for every file in package
 x <- tools::md5sum(DCCFiles)
@@ -18,7 +18,7 @@ x <- tools::md5sum(DCCFiles)
 x <- x[names(x) != "MD5"]
 outDir <- "C:/Users/edmondsonef/Desktop/"
 ## write each result out to the "MD5" file
-cat(paste(x, names(x), sep = " *"), sep = "\n", 
+cat(paste(x, names(x), sep = " *"), sep = "\n",
     file = file.path(outDir, "MD5"))
 
 
